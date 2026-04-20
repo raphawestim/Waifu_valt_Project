@@ -183,6 +183,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
                         My Favorites
                     </button>
+                    <button
+                        onClick={() => onNavigate('comfyui' as any)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-600 dark:hover:text-emerald-400 border border-transparent"
+                    >
+                        <div className="w-5 h-5 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                        </div>
+                        ComfyUI Studio
+                    </button>
                 </nav>
 
                 {/* Filters Section */}

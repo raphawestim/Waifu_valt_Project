@@ -11,9 +11,10 @@ interface HomeViewProps {
     onRequestNsfw: (onConfirm: () => void, onCancel: () => void) => void;
     onAuthRequest: () => void;
     onNavigateHome?: () => void;
+    onNavigateComfyUI?: () => void;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ currentOptions, onSearchSubmit, onRequestNsfw, onAuthRequest, onNavigateHome }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ currentOptions, onSearchSubmit, onRequestNsfw, onAuthRequest, onNavigateHome, onNavigateComfyUI }) => {
     const [localQuery, setLocalQuery] = useState(currentOptions.query);
     const [localOptions, setLocalOptions] = useState<SearchOptions>(currentOptions);
     const [carouselImages, setCarouselImages] = useState<WaifuImage[]>([]);
@@ -83,16 +84,26 @@ export const HomeView: React.FC<HomeViewProps> = ({ currentOptions, onSearchSubm
             
             {/* Top Navigation Bar */}
             <nav className="absolute top-0 inset-x-0 p-6 flex justify-between items-center z-20">
-                {/* Left Side: NSFW Mode Toggle */}
-                <button 
-                    onClick={toggleNsfwGlobal}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition font-bold shadow-md ${localOptions.isNsfwEnabled ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400' : 'bg-white dark:bg-[#151515] border-black/10 dark:border-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                >
-                    <svg className="w-5 h-5" fill={localOptions.isNsfwEnabled ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                    {localOptions.isNsfwEnabled ? 'NSFW Enabled' : 'NSFW Disabled'}
-                </button>
+                {/* Left Side: NSFW Mode Toggle + ComfyUI */}
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={toggleNsfwGlobal}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full border transition font-bold shadow-md ${localOptions.isNsfwEnabled ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400' : 'bg-white dark:bg-[#151515] border-black/10 dark:border-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                    >
+                        <svg className="w-5 h-5" fill={localOptions.isNsfwEnabled ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        {localOptions.isNsfwEnabled ? 'NSFW Enabled' : 'NSFW Disabled'}
+                    </button>
+
+                    <button
+                        onClick={onNavigateComfyUI}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-white dark:bg-[#151515] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition font-bold shadow-md"
+                    >
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        ComfyUI
+                    </button>
+                </div>
 
                 {/* Right Side: Theme & Auth */}
                 <div className="flex items-center gap-4">

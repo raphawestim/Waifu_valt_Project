@@ -5,11 +5,13 @@ export interface WaifuImage {
   tags: string[];
   score: number;
   artist?: string;
-  sourceApi: 'gelbooru' | 'waifu.im' | 'rule34' | 'danbooru' | 'konachan' | 'yandere' | 'local';
+  sourceApi: 'gelbooru' | 'waifu.im' | 'rule34' | 'danbooru' | 'konachan' | 'yandere' | 'comfyui' | 'local';
   rating: 'safe' | 'questionable' | 'explicit';
   width: number;
   height: number;
   type: 'image' | 'video' | 'gif';
+  positivePrompt?: string;
+  negativePrompt?: string;
 }
 
 export type RatingFilter = 'safe' | 'questionable';

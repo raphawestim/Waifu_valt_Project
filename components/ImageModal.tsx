@@ -195,6 +195,33 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                             ))}
                         </div>
                     </div>
+
+                    {(image.positivePrompt || image.negativePrompt) && (
+                        <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+                            {image.positivePrompt && (
+                                <div className="space-y-2">
+                                    <h3 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        Positive Prompt
+                                    </h3>
+                                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-[11px] text-gray-400 leading-relaxed max-h-40 overflow-y-auto no-scrollbar italic">
+                                        {image.positivePrompt}
+                                    </div>
+                                </div>
+                            )}
+                            {image.negativePrompt && (
+                                <div className="space-y-2">
+                                    <h3 className="text-[10px] font-bold text-red-500 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                        Negative Prompt
+                                    </h3>
+                                    <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl text-[11px] text-gray-400 leading-relaxed max-h-32 overflow-y-auto no-scrollbar italic">
+                                        {image.negativePrompt}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

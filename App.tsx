@@ -9,6 +9,7 @@ import { Spinner, FullScreenSpinner } from './components/Spinner';
 import { EmptyState } from './components/EmptyState';
 import { Pagination } from './components/Pagination';
 import { HomeView } from './components/HomeView';
+import { ComfyUIView } from './components/ComfyUIView';
 import { NsfwModal } from './components/NsfwModal';
 import { searchImages, getRandomImages } from './services/imageService';
 import { useAuth, AuthProvider } from './context/AuthContext';
@@ -18,7 +19,7 @@ import { DEFAULT_SEARCH_OPTIONS } from './constants';
 
 const AppContent: React.FC = () => {
     const { user, favorites, lists } = useAuth();
-    const [view, setView] = useState<'home' | 'explore' | 'profile'>('home');
+    const [view, setView] = useState<'home' | 'explore' | 'profile' | 'comfyui'>('home');
     
     // Core Data States
     const [gridImages, setGridImages] = useState<WaifuImage[]>([]);
@@ -116,7 +117,7 @@ const AppContent: React.FC = () => {
         setSelectedImage({ image: activeCollection[prevIndex], index: prevIndex });
     };
 
-    const handleNavigate = (newView: 'home' | 'explore' | 'profile' | 'favorites') => {
+    const handleNavigate = (newView: 'home' | 'explore' | 'profile' | 'favorites' | 'comfyui') => {
         if (newView === 'favorites') {
             if (!user) {
                 setIsAuthModalOpen(true);
@@ -131,9 +132,33 @@ const AppContent: React.FC = () => {
             return;
         }
 
-        setView(newView);
+        setView(newView as any);
         window.scrollTo(0,0);
     };
+
+    if (view === 'comfyui') {
+        return (
+            <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen text-gray-900 dark:text-gray-100 selection:bg-violet-500/30 transition-colors duration-300">
+                <ComfyUIView 
+                    onImageClick={handleSelectImage}
+                    onNavigateHome={() => setView('home')}
+                />
+                {selectedImage && (
+                    <ImageModal
+                        image={selectedImage.image}
+                        onClose={() => setSelectedImage(null)}
+                        isLoggedIn={!!user}
+                        onAuthRequest={() => setIsAuthModalOpen(true)}
+                        onNext={handleNextImage}
+                        onPrev={handlePrevImage}
+                        canNext={selectedImage.index < activeCollection.length - 1}
+                        canPrev={selectedImage.index > 0}
+                    />
+                )}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
 
     if (view === 'home') {
         return (
@@ -144,6 +169,7 @@ const AppContent: React.FC = () => {
                     onRequestNsfw={handleRequestNsfw} 
                     onAuthRequest={() => setIsAuthModalOpen(true)}
                     onNavigateHome={() => setView('home')}
+                    onNavigateComfyUI={() => setView('comfyui')}
                 />
                 <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} />
             </div>
