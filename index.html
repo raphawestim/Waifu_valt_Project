@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Waifu Vault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: 'var(--background)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+      :root {
+        --background: #f9fafb; /* light mode default */
+        --primary: #8b5cf6;
+      }
+      .dark {
+         --background: #0a0a0a;
+      }
+      body {
+        background-color: var(--background);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        color: #111;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        margin: 0;
+        overflow-x: hidden;
+      }
+      .dark body {
+        color: #e5e5e5;
+      }
+      
+      /* Marquee Animation for Carousel */
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      @keyframes progress-bar {
+        0%   { transform: translateX(-100%); }
+        50%  { transform: translateX(0); }
+        100% { transform: translateX(100%); }
+      }
+      .animate-marquee {
+        animation: marquee 28s linear infinite;
+      }
+      .animate-marquee-slow {
+        animation: marquee 50s linear infinite;
+      }
+      .animate-marquee:hover, .animate-marquee-slow:hover {
+        animation-play-state: paused;
+      }
+      
+      /* Hide Scrollbar but keep functionality */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* High Density Masonry Grid */
+      .masonry-grid {
+        columns: 2;
+        column-gap: 1rem;
+      }
+      @media (min-width: 640px) { .masonry-grid { columns: 2; } }
+      @media (min-width: 768px) { .masonry-grid { columns: 3; } }
+      @media (min-width: 1024px) { .masonry-grid { columns: 4; } }
+      @media (min-width: 1280px) { .masonry-grid { columns: 5; } }
+      @media (min-width: 1536px) { .masonry-grid { columns: 6; } }
+
+      .masonry-item {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+      }
+
+      /* Animations */
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

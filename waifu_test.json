@@ -1,0 +1,8 @@
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "The requested endpoint was not found.",
+  "instance": "/search",
+  "traceId": "00-c9e9f1848ea8d3af48fa4397bcfb21ff-6d44a48d9e342ee9-00"
+}

@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "id": 6063,
+      "perceptualHash": "c16333dce598ba25",
+      "extension": ".jpg",
+      "dominantColor": "#83787D",
+      "source": "https://www.pixiv.net/en/artworks/91476315",
+      "artists": [
+        {
+          "id": 630,
+          "name": "Band",
+          "patreon": null,
+          "pixiv": "https://www.pixiv.net/users/56005970",
+          "twitter": "https://twitter.com/skymole01",
+          "deviantArt": null,
+          "reviewStatus": "Accepted",
+          "creatorId": null,
+          "imageCount": 0
+        }
+      ],
+      "uploaderId": null,
+      "uploadedAt": "2021-11-02T11:16:19.048684Z",
+      "isNsfw": false,
+      "isAnimated": false,
+      "width": 2800,
+      "height": 3900,
+      "byteSize": 15546259,
+      "url": "https://cdn.waifu.im/6063.jpg",
+      "tags": [
+        {
+          "id": 12,
+          "name": "Waifu",
+          "slug": "waifu",
+          "description": "A female anime/manga character.",
+          "reviewStatus": "Accepted",
+          "creatorId": null,
+          "imageCount": 0
+        }
+      ],
+      "reviewStatus": "Accepted",
+      "favorites": 5,
+      "likedAt": null,
+      "addedToAlbumAt": null,
+      "albums": []
+    }
+  ],
+  "pageNumber": 1,
+  "totalPages": 1244,
+  "totalCount": 1244,
+  "maxPageSize": -1,
+  "defaultPageSize": 1,
+  "hasPreviousPage": false,
+  "hasNextPage": true
+}
