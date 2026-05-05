@@ -10,16 +10,23 @@ import { EmptyState } from './components/EmptyState';
 import { Pagination } from './components/Pagination';
 import { HomeView } from './components/HomeView';
 import { ComfyUIView } from './components/ComfyUIView';
+import { TagExplorerView } from './components/TagExplorerView';
 import { NsfwModal } from './components/NsfwModal';
+import { NHentaiView } from './components/NHentaiView';
+import { R34VideoView } from './components/R34VideoView';
+import { R34VideoPlayerModal } from './components/R34VideoPlayerModal';
+import { HHView } from './components/HHView';
 import { searchImages, getRandomImages } from './services/imageService';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import type { WaifuImage, SearchOptions } from './types';
 import { DEFAULT_SEARCH_OPTIONS } from './constants';
 
+type ViewType = 'home' | 'explore' | 'profile' | 'comfyui' | 'nhentai' | 'rule34video' | 'hentaihaven' | 'artists' | 'characters' | 'metadata';
+
 const AppContent: React.FC = () => {
     const { user, favorites, lists } = useAuth();
-    const [view, setView] = useState<'home' | 'explore' | 'profile' | 'comfyui'>('home');
+    const [view, setView] = useState<ViewType>('home');
     
     // Core Data States
     const [gridImages, setGridImages] = useState<WaifuImage[]>([]);
@@ -29,6 +36,7 @@ const AppContent: React.FC = () => {
     
     // Modal & Navigation State
     const [selectedImage, setSelectedImage] = useState<{ image: WaifuImage, index: number } | null>(null);
+    const [selectedR34Video, setSelectedR34Video] = useState<any | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isNsfwModalOpen, setIsNsfwModalOpen] = useState(false);
     const [nsfwCallbacks, setNsfwCallbacks] = useState<{ confirm: () => void, cancel: () => void } | null>(null);
@@ -74,6 +82,15 @@ const AppContent: React.FC = () => {
         handleFilterChange({ ...searchOptions, query });
     };
 
+    const handleTagSelect = (tag: string, type?: 'artist' | 'character' | 'metadata') => {
+        let query = tag;
+        // Danbooru convention for artist/character search
+        if (type === 'artist') query = `artist:${tag}`;
+        else if (type === 'character') query = `character:${tag}`;
+        
+        handleSearch(query);
+    };
+
     const handleRequestNsfw = (onConfirm: () => void, onCancel: () => void) => {
         setNsfwCallbacks({ confirm: onConfirm, cancel: onCancel });
         setIsNsfwModalOpen(true);
@@ -117,7 +134,7 @@ const AppContent: React.FC = () => {
         setSelectedImage({ image: activeCollection[prevIndex], index: prevIndex });
     };
 
-    const handleNavigate = (newView: 'home' | 'explore' | 'profile' | 'favorites' | 'comfyui') => {
+    const handleNavigate = (newView: ViewType | 'favorites') => {
         if (newView === 'favorites') {
             if (!user) {
                 setIsAuthModalOpen(true);
@@ -132,16 +149,145 @@ const AppContent: React.FC = () => {
             return;
         }
 
-        setView(newView as any);
+        setView(newView as ViewType);
         window.scrollTo(0,0);
     };
 
-    if (view === 'comfyui') {
+    // Shared UI for Sub-views (ComfyUI / Explorers)
+    const renderSubView = () => {
+        if (view === 'comfyui') {
+            return <ComfyUIView onImageClick={handleSelectImage} onNavigateHome={() => setView('home')} />;
+        }
+        if (view === 'nhentai') {
+            return (
+                <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen w-full">
+                    <Sidebar 
+                        isOpen={isSidebarOpen} 
+                        onClose={() => setIsSidebarOpen(false)} 
+                        onFilterChange={handleFilterChange} 
+                        onSearch={handleSearch} 
+                        onNavigate={handleNavigate} 
+                        currentOptions={searchOptions} 
+                        isLoggedIn={!!user} 
+                        currentView={view} 
+                        onRequestNsfw={handleRequestNsfw}
+                    />
+                    <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : 'ml-0'}`}>
+                        <NHentaiView onNavigateHome={() => setView('home')} />
+                    </main>
+                </div>
+            );
+        }
+        if (view === 'rule34video') {
+            return (
+                <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen w-full">
+                    <Sidebar 
+                        isOpen={isSidebarOpen} 
+                        onClose={() => setIsSidebarOpen(false)} 
+                        onFilterChange={handleFilterChange} 
+                        onSearch={handleSearch} 
+                        onNavigate={handleNavigate} 
+                        currentOptions={searchOptions} 
+                        isLoggedIn={!!user} 
+                        currentView={view} 
+                        onRequestNsfw={handleRequestNsfw}
+                    />
+                    <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : 'ml-0'}`}>
+                        <R34VideoView onSelectVideo={(v) => setSelectedR34Video(v)} />
+                    </main>
+                </div>
+            );
+        }
+        if (view === 'hentaihaven') {
+            return (
+                <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen w-full">
+                    <Sidebar 
+                        isOpen={isSidebarOpen} 
+                        onClose={() => setIsSidebarOpen(false)} 
+                        onFilterChange={handleFilterChange} 
+                        onSearch={handleSearch} 
+                        onNavigate={handleNavigate} 
+                        currentOptions={searchOptions} 
+                        isLoggedIn={!!user} 
+                        currentView={view} 
+                        onRequestNsfw={handleRequestNsfw}
+                    />
+                    <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : 'ml-0'}`}>
+                        <HHView />
+                    </main>
+                </div>
+            );
+        }
+        if (view === 'artists' || view === 'characters' || view === 'metadata') {
+            return (
+                <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen">
+                    <Sidebar 
+                        isOpen={isSidebarOpen} 
+                        onClose={() => setIsSidebarOpen(false)} 
+                        onFilterChange={handleFilterChange} 
+                        onSearch={handleSearch} 
+                        onNavigate={handleNavigate} 
+                        currentOptions={searchOptions} 
+                        isLoggedIn={!!user} 
+                        currentView={view} 
+                        onRequestNsfw={handleRequestNsfw}
+                    />
+                    <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : 'ml-0'}`}>
+                         <TagExplorerView 
+                            type={view as any} 
+                            onTagClick={(tag) => handleTagSelect(tag, view as any)} 
+                            onNavigateHome={() => setView('home')} 
+                         />
+                    </main>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const subView = renderSubView();
+    if (subView) {
         return (
             <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen text-gray-900 dark:text-gray-100 selection:bg-violet-500/30 transition-colors duration-300">
-                <ComfyUIView 
+                {subView}
+                {selectedImage && (
+                    <ImageModal
+                        image={selectedImage.image}
+                        onClose={() => setSelectedImage(null)}
+                        isLoggedIn={!!user}
+                        onAuthRequest={() => setIsAuthModalOpen(true)}
+                        onNext={handleNextImage}
+                        onPrev={handlePrevImage}
+                        canNext={selectedImage.index < activeCollection.length - 1}
+                        canPrev={selectedImage.index > 0}
+                    />
+                )}
+                {selectedR34Video && (
+                    <R34VideoPlayerModal 
+                        videoInfo={selectedR34Video} 
+                        onClose={() => setSelectedR34Video(null)} 
+                    />
+                )}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} />
+            </div>
+        );
+    }
+
+    if (view === 'home') {
+        return (
+            <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen text-gray-900 dark:text-gray-100 selection:bg-violet-500/30 transition-colors duration-300">
+                <HomeView 
+                    currentOptions={searchOptions} 
+                    onSearchSubmit={handleFilterChange} 
+                    onRequestNsfw={handleRequestNsfw} 
+                    onAuthRequest={() => setIsAuthModalOpen(true)}
                     onImageClick={handleSelectImage}
                     onNavigateHome={() => setView('home')}
+                    onNavigateComfyUI={() => setView('comfyui')}
+                    onNavigateArtists={() => setView('artists')}
+                    onNavigateCharacters={() => setView('characters')}
+                    onNavigateMetadata={() => setView('metadata')}
                 />
                 {selectedImage && (
                     <ImageModal
@@ -156,21 +302,6 @@ const AppContent: React.FC = () => {
                     />
                 )}
                 <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-            </div>
-        );
-    }
-
-    if (view === 'home') {
-        return (
-            <div className="flex bg-neutral-50 dark:bg-[#0a0a0a] min-h-screen text-gray-900 dark:text-gray-100 selection:bg-violet-500/30 transition-colors duration-300">
-                <HomeView 
-                    currentOptions={searchOptions} 
-                    onSearchSubmit={handleFilterChange} 
-                    onRequestNsfw={handleRequestNsfw} 
-                    onAuthRequest={() => setIsAuthModalOpen(true)}
-                    onNavigateHome={() => setView('home')}
-                    onNavigateComfyUI={() => setView('comfyui')}
-                />
                 <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} />
             </div>
         );
@@ -252,6 +383,13 @@ const AppContent: React.FC = () => {
                     onPrev={handlePrevImage}
                     canNext={selectedImage.index < activeCollection.length - 1}
                     canPrev={selectedImage.index > 0}
+                />
+            )}
+            
+            {selectedR34Video && (
+                <R34VideoPlayerModal 
+                    videoInfo={selectedR34Video} 
+                    onClose={() => setSelectedR34Video(null)} 
                 />
             )}
             

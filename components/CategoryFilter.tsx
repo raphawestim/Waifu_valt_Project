@@ -73,7 +73,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({ options, onFilte
                     {/* Sources Group */}
                     <div className="flex items-center space-x-2 border-r border-gray-700 pr-4 flex-shrink-0">
                         <span className="text-xs font-bold text-gray-500 uppercase mr-1 hidden sm:inline-block">APIs</span>
-                        {(['waifu.im', 'gelbooru', 'danbooru', 'konachan', 'rule34', 'yandere'] as const).map(source => (
+                        {(['waifu.im', 'gelbooru', 'konachan', 'rule34', 'yandere'] as const).map(source => (
                             <button
                                 key={source}
                                 onClick={() => toggleSource(source)}

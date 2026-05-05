@@ -14,10 +14,6 @@ export const API_CONFIG = {
     baseUrl: 'https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1',
     authParams: '&api_key=0b1c62663b571bf3cc957dab9974be29907d98697b4f197ed26629f4280aa0162ba651ca75cd1a108ab83658ab0d1782ad7a3c0e31af48e98f530018e8083ba5&user_id=5607049',
   },
-  danbooru: {
-    baseUrl: 'https://danbooru.donmai.us/posts.json',
-    authParams: '&login=FioreDark&api_key=NkE5CGuN6Jm9r7bhMiHxnJNu',
-  },
   konachan: {
     baseUrl: 'https://konachan.net/post.json',
     authParams: '',
@@ -31,17 +27,21 @@ export const API_CONFIG = {
 export const API_FAVICONS: Record<SourceApi, string> = {
   'waifu.im': 'https://waifu.im/favicon.ico',
   'gelbooru': 'https://gelbooru.com/favicon.ico',
-  'danbooru': 'https://danbooru.donmai.us/favicon.ico',
   'rule34': 'https://rule34.xxx/favicon.ico',
   'konachan': 'https://konachan.net/favicon.ico',
   'yandere': 'https://yande.re/favicon.ico',
 };
 
 
-export const POPULAR_TAGS = ['catgirl', 'elf', 'idol', 'schoolgirl', 'maid', 'fantasy', 'fox_girl', 'succubus'];
 
-export const WAIFU_IM_VERSATILE_TAGS = ['waifu', 'maid', 'marin-kitagawa', 'mori-calliope', 'raiden-shogun', 'oppai', 'selfies', 'uniform'];
-export const WAIFU_IM_NSFW_TAGS = ['ass', 'hentai', 'milf', 'oral', 'paizuri', 'ecchi', 'ero'];
+export const POPULAR_TAGS = ['1girl', 'solo', 'smile', 'school_uniform', 'long_hair', 'anime', 'fantasy', 'blonde_hair'];
+
+// Valid slugs from waifu.im /tags endpoint — SFW
+export const WAIFU_IM_VERSATILE_TAGS = ['waifu', 'maid', 'selfies', 'uniform', 'marin-kitagawa', 'raiden-shogun', 'mori-calliope', 'genshin-impact', 'kamisato-ayaka', 'arknights', 'black-clover'];
+// Valid slugs from waifu.im /tags endpoint — NSFW
+export const WAIFU_IM_NSFW_TAGS = ['ass', 'hentai', 'milf', 'oral', 'paizuri', 'ecchi', 'ero', 'oppai'];
+// All valid waifu.im slugs in a Set for fast lookup
+export const WAIFU_IM_VALID_SLUGS = new Set([...WAIFU_IM_VERSATILE_TAGS, ...WAIFU_IM_NSFW_TAGS]);
 
 export const NSFW_SOURCES: SourceApi[] = ['rule34'];
 

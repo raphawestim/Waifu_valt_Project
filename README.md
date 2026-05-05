@@ -1,95 +1,134 @@
 # 🌌 Waifu Vault v2.0
 
 <div align="center">
-  <img src="https://img.shields.io/badge/Version-2.0.0-blueviolet?style=for-the-badge" alt="Version" />
-  <img src="https://img.shields.io/badge/React-2024-61DAFB?style=for-the-badge&logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/Vite-Ready-646CFF?style=for-the-badge&logo=vite" alt="Vite" />
+  <img src="https://img.shields.io/badge/Version-2.1.0-blueviolet?style=for-the-badge" alt="Version" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-6.2-646CFF?style=for-the-badge&logo=vite" alt="Vite" />
+  <img src="https://img.shields.io/badge/Premium-UI-FF69B4?style=for-the-badge" alt="Premium UI" />
 </div>
 
 ---
 
-## 🌟 Overview
+## 🌟 Visão Geral
 
-**Waifu Vault** is a high-fidelity, modern web application designed for exploring and discovering high-quality character art and media across multiple popular image boards. With a focus on **Premium UX**, **Dynamic Interactivity**, and **Universal Theming**, it provides a centralized gateway to millions of images with high-performance filtering and content management.
+O **Waifu Vault** é uma plataforma de descoberta de mídia de alta fidelidade, projetada para centralizar a exploração de arte, mangás e vídeos de diversas fontes populares (Image Boards). Com foco em **UX Premium**, **Interatividade Dinâmica** e um sistema de **Tematização Universal**, o Vault oferece uma experiência de software nativo diretamente no navegador.
 
-## ✨ Key Features
+Seja você um entusiasta de arte digital, um leitor de mangás ou um criador utilizando IA (Stable Diffusion/ComfyUI), o Waifu Vault é o seu portal definitivo.
 
-### 🎨 Premium User Interface
-- **Dynamic Home Page**: A search-engine inspired landing page with a central repository feel.
-- **Hero Carousel**: An auto-scrolling, high-fidelity gallery carousel that intuitively adapts its content to your safety preferences.
-- **Micro-Animations**: Smooth transitions, hover scaling, and progress bar loaders powered by optimized CSS and React state.
+---
 
-### 🌓 Universal Theming
-- **Global Light/Dark Mode**: A complete theme system that adapts every component (Sidebar, Modals, Grids, etc.) to your preferred aesthetic.
-- **Glassmorphism**: Modern backdrop-blur effects and translucent layers for a "premium" software feel.
+## ✨ Funcionalidades Principais
 
-### 🔒 Safety & NSFW Controls
-- **NSFW State Management**: A global safety toggle that gates restricted content behind confirmation modals.
-- **Smart Filtering**: Automatic rating application (e.g., `-rating:explicit`) across Booru sources when safety mode is enabled.
+### 🎨 Interface de Usuário Premium
+- **Experiência Glassmorphism**: Design moderno com efeitos de desfoque de fundo (backdrop-blur) e camadas translúcidas.
+- **Home Dinâmica**: Uma página de entrada inspirada em motores de busca premium com carrosséis adaptativos.
+- **Micro-animações**: Transições suaves, escalonamento no hover e loaders de barra de progresso otimizados.
+- **Modo Escuro/Claro Global**: Sistema de temas completo que se adapta a todos os componentes, do Sidebar aos Modais.
 
-### 🚀 High-Performance Search
-- **Multi-Source Fetching**: Seamless integration with **Waifu.im**, **Gelbooru**, **Danbooru**, **Rule34**, **Konachan**, and **Yandere**.
-- **CORS Proxy Integration**: Optimized image loading bypass for sources with strict hotlinking protections like Danbooru.
-- **Advanced Filtering**: Categorize by tags, content types (Images, GIFs, Videos), and specific API sources.
+### 🔍 Exploração Multi-Fonte
+- **Busca Unificada**: Integração nativa com **Waifu.im**, **Gelbooru**, **Rule34**, **Konachan** e **Yandere**.
+- **Tag Explorer**: Navegação avançada por Artistas, Personagens e Metadados com pré-visualizações em tempo real.
+- **Filtragem Inteligente**: Suporte a busca por tags, tipos de conteúdo (Imagens, GIFs, Vídeos) e fontes específicas.
 
-## 🛠️ Technology Stack
+### 📚 Módulos Especializados
+- **📖 NHentai Reader**: Leitor de mangás integrado com busca e visualização completa de volumes.
+- **📺 HH Explorer**: Navegador de séries e animações via HentaiHaven.
+- **🎬 R34 Video Player**: Player de vídeo otimizado com suporte a busca (seeking) e carregamento sob demanda.
+- **🤖 Integração ComfyUI**: Visualize suas gerações locais do Stable Diffusion, explore pastas de saída e inicie o servidor ComfyUI diretamente do Vault.
 
-- **Framework**: [React](https://reactjs.org/) (TypeScript)
-- **Bundler**: [Vite](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **State Management**: Context API (Auth, Theme, NSFW)
-- **Icons**: [Heroicons](https://heroicons.com/) / Custom SVG
-- **Animations**: CSS Keyframes + Framer-inspired React transitions
+### 🔒 Segurança e Privacidade
+- **NSFW Gate**: Toggle de segurança global que oculta conteúdo sensível atrás de confirmações e filtros automáticos (ex: `-rating:explicit`).
+- **Proxy Anti-CORS**: Sistema integrado para burlar restrições de hotlinking e Cloudflare de fontes externas.
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- **Node.js** (v18+)
-- **npm** or **yarn**
+## 🛠️ Stack Tecnológica
 
-### Installation
+- **Frontend**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool**: [Vite 6](https://vitejs.dev/)
+- **Estilização**: CSS Moderno (Vanilla + Variáveis Dinâmicas)
+- **Parsing**: [Cheerio](https://cheerio.js.org/) para scraping de alta performance.
+- **Plugins**: Plugin Vite customizado para integração com sistema de arquivos local (ComfyUI).
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/raphawestim/Waifu_valt_Project.git
-   cd Waifu_valt_Project
-   ```
+---
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+## 🚀 Como Executar em Outros Computadores
 
-3. **Environment Setup:**
-   Create a `.env.local` file (optional for basic use, but recommended for API keys).
+Para rodar o Waifu Vault em uma nova máquina, siga estas diretrizes essenciais:
 
-4. **Run Development Server:**
-   ```bash
-   npm run dev
-   ```
+### 1. Pré-requisitos
+- **Node.js**: Versão 18.0 ou superior.
+- **Gerenciador de Pacotes**: npm ou yarn.
+
+### 2. Instalação
+```bash
+# Clone o repositório
+git clone https://github.com/raphawestim/Waifu_valt_Project.git
+cd Waifu_valt_Project
+
+# Instale as dependências
+npm install
+```
+
+### 3. Configuração de Ambiente (`.env.local`)
+Crie um arquivo chamado `.env.local` na raiz do projeto e configure as chaves necessárias:
+```env
+GEMINI_API_KEY=sua_chave_aqui
+NHENTAI_API_KEY=sua_chave_nhentai_aqui
+```
+
+### 4. Ajustes de Caminhos Locais (Importante!)
+Se você planeja usar o módulo **ComfyUI**, deve atualizar os caminhos no arquivo `comfyui-plugin.ts` para refletir a estrutura de pastas do seu computador:
+
+1. Abra `comfyui-plugin.ts`.
+2. Localize e altere as constantes:
+   - `COMFYUI_OUTPUT_DIR`: Caminho para a pasta `/output` do seu ComfyUI.
+   - `COMFYUI_BAT_PATH`: Caminho para o seu arquivo `.bat` de inicialização (ex: `run_nvidia_gpu.bat`).
+
+### 5. Execução
+```bash
+# Iniciar em modo de desenvolvimento
+npm run dev
+```
+
+---
+
+## 🏗️ Arquitetura e Funcionamento
+
+### Sistema de Plugins e Proxies
+O projeto utiliza uma arquitetura baseada em **Service Proxies**. Devido às restrições de CORS de muitos Image Boards, as requisições de API passam por uma camada de proxy (`api.codetabs.com` ou `corsproxy.io`) configurada em `imageService.ts`.
+
+### Integração Local (Vite Middleware)
+Diferente de aplicações web comuns, o Vault usa o `configureServer` do Vite para criar endpoints de API locais (`/api/comfyui/*`). Isso permite que o frontend interaja com o seu sistema de arquivos de forma segura para gerenciar suas imagens geradas por IA.
+
+### Gerenciamento de Estado
+- **AuthContext**: Gerencia "favoritos" e "listas" (atualmente persistidos em LocalStorage).
+- **ThemeContext**: Controla a alternância dinâmica entre temas sem recarregar a página.
+
+---
 
 ## 📸 Screenshots
 
 > [!TIP]
-> This project features a fully responsive design. Try it on desktop for the full "Vault Explorer" experience!
+> O design é 100% responsivo. Experimente a "Vault View" em telas largas para uma experiência imersiva de galeria!
 
-| Home Page (Dark) | Explorer View (Light) | NSFW Gate |
+| Desktop Home | Manga Reader | ComfyUI Panel |
 | :---: | :---: | :---: |
-| ✨ *Elegant Search* | 🖼️ *Dynamic Grid* | 🚨 *Safety First* |
+| ✨ *Interface Glass* | 📖 *Modo Leitura* | 🤖 *IA Local* |
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contribuição
 
-Contributions are welcome! Feel free to open issues or submit pull requests to enhance the vault.
-
-## 📄 License
-
-This project is licensed under the MIT License.
+Contribuições são o que tornam a comunidade incrível! Sinta-se à vontade para:
+1. Abrir **Issues** para relatar bugs.
+2. Sugerir novas fontes de API.
+3. Submeter **Pull Requests** com melhorias de performance ou UI.
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by the Waifu Vault Team</sub>
+  <sub>Desenvolvido com ❤️ por Raphael Westim e a comunidade Waifu Vault</sub><br>
+  <sub>Licenciado sob a MIT License</sub>
 </div>

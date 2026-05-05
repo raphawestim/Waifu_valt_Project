@@ -8,7 +8,7 @@ interface SidebarProps {
     onClose: () => void;
     onFilterChange: (options: SearchOptions) => void;
     onSearch: (query: string) => void;
-    onNavigate: (view: 'explore' | 'profile' | 'favorites' | 'home') => void;
+    onNavigate: (view: any) => void;
     currentOptions: SearchOptions;
     isLoggedIn: boolean;
     currentView: string;
@@ -68,7 +68,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         if (isNsfwSource && !options.isNsfwEnabled && !options.sources.includes(source)) {
             onRequestNsfw(() => {
-                // Confirm
                 setOptions(prev => {
                     const newSources = [...prev.sources, source];
                     const updated = { ...prev, isNsfwEnabled: true, sources: newSources };
@@ -115,7 +114,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     return (
         <>
-            {/* Mobile Overlay */}
             {isOpen && (
                 <div 
                     className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm z-40 md:hidden"
@@ -130,7 +128,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button 
                         onClick={() => onNavigate('home')} 
                         className="flex items-center gap-3 hover:opacity-75 transition-opacity focus:outline-none"
-                        title="Go to Home"
                     >
                         <LogoIcon />
                         <h2 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
@@ -160,43 +157,95 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
 
                 {/* Navigation Links */}
-                <nav className="px-4 space-y-1 mb-8">
+                <nav className="px-1 space-y-1">
                     <button
                         onClick={() => onNavigate('explore')}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                             currentView === 'explore'
-                                ? 'bg-white dark:bg-[#1a1a1a] text-violet-600 dark:text-white shadow-sm dark:shadow-md border border-neutral-200 dark:border-white/10'
-                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300 border border-transparent'
+                                ? 'bg-white dark:bg-[#1a1a1a] text-violet-600 dark:text-white shadow-sm border border-neutral-200 dark:border-white/10'
+                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                        Explore Collection
+                        Vault Gallery
                     </button>
+                    
+                    <div className="py-2 border-t border-black/5 dark:border-white/5 my-2">
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-2">Discovery</h4>
+                        <button onClick={() => onNavigate('artists')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${currentView === 'artists' ? 'text-violet-500 bg-violet-500/5' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            Artists
+                        </button>
+                        <button onClick={() => onNavigate('characters')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${currentView === 'characters' ? 'text-violet-500 bg-violet-500/5' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Characters
+                        </button>
+                        <button onClick={() => onNavigate('metadata')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${currentView === 'metadata' ? 'text-violet-500 bg-violet-500/5' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                            Metadata
+                        </button>
+                    </div>
+
                     <button
                         onClick={() => onNavigate('favorites')}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                            currentView === 'favorites'
-                                ? 'bg-white dark:bg-[#1a1a1a] text-violet-600 dark:text-white shadow-sm dark:shadow-md border border-neutral-200 dark:border-white/10'
-                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300 border border-transparent'
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'profile'
+                                ? 'bg-white dark:bg-[#1a1a1a] text-violet-600 dark:text-white shadow-sm border border-neutral-200 dark:border-white/10'
+                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
                         My Favorites
                     </button>
                     <button
-                        onClick={() => onNavigate('comfyui' as any)}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-600 dark:hover:text-emerald-400 border border-transparent"
+                        onClick={() => onNavigate('comfyui')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'comfyui'
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                : 'text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-600 dark:hover:text-emerald-400'
+                        }`}
                     >
                         <div className="w-5 h-5 flex items-center justify-center">
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                         </div>
                         ComfyUI Studio
                     </button>
+                    <button
+                        onClick={() => onNavigate('nhentai')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'nhentai'
+                                ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-sm border'
+                                : 'text-gray-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 hover:text-rose-600 dark:hover:text-rose-400 border border-transparent'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        Manga / Doujins
+                    </button>
+                    <button
+                        onClick={() => onNavigate('rule34video')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'rule34video'
+                                ? 'bg-orange-500/10 text-orange-500 border-orange-500/20 shadow-sm border'
+                                : 'text-gray-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 hover:text-orange-600 dark:hover:text-orange-400 border border-transparent'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Rule34Video
+                    </button>
+                    <button
+                        onClick={() => onNavigate('hentaihaven')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'hentaihaven'
+                                ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 shadow-sm border'
+                                : 'text-gray-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400 border border-transparent'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        HentaiHaven
+                    </button>
                 </nav>
 
-                {/* Filters Section */}
-                    {/* Content Types */}
-                    <div>
+                    <div className="pt-8 block">
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Format</h4>
                         <div className="grid grid-cols-4 gap-1 p-1 bg-neutral-100 dark:bg-[#151515] rounded-xl border border-black/5 dark:border-white/5">
                         {(['all', 'images', 'videos', 'gifs'] as const).map(type => (
@@ -205,7 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onClick={() => setContentType(type)}
                                 className={`py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
                                     options.contentType === type 
-                                        ? 'bg-white dark:bg-[#222] text-violet-600 dark:text-white shadow-sm dark:shadow-md' 
+                                        ? 'bg-white dark:bg-[#222] text-violet-600 dark:text-white shadow-sm' 
                                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300'
                                 }`}
                             >
@@ -215,25 +264,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     </div>
 
-                    {/* API Sources */}
-                    <div>
+                    <div className="pt-8">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">APIs & Sources</h3>
-                            {options.sources.length === 0 && (
-                                <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/20 px-2 py-0.5 rounded-full">
-                                    All Sources
-                                </span>
-                            )}
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                            {(['waifu.im', 'gelbooru', 'danbooru', 'rule34', 'konachan', 'yandere'] as const).map(source => (
+                            {(['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere'] as const).map(source => (
                                 <button
                                     key={source}
                                     onClick={() => toggleSource(source)}
                                     title={source}
                                     className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all border ${
                                         options.sources.includes(source)
-                                            ? 'bg-violet-100 dark:bg-violet-600/20 border-violet-500/50 shadow-sm dark:shadow-violet-500/20'
+                                            ? 'bg-violet-100 dark:bg-violet-600/20 border-violet-500/50 shadow-sm'
                                             : 'bg-neutral-100 dark:bg-[#151515] border-transparent hover:border-black/10 dark:hover:border-white/10 opacity-70 hover:opacity-100 grayscale hover:grayscale-[0.5]'
                                     }`}
                                 >
@@ -246,8 +289,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     </div>
 
-                    {/* Popular Tags */}
-                    <div>
+                    <div className="pt-8">
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Popular Tags</h4>
                         <div className="flex flex-wrap gap-2">
                             {POPULAR_TAGS.map(tag => (
@@ -260,51 +302,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                             : 'bg-neutral-100 dark:bg-[#1a1a1a] text-gray-500 hover:text-gray-700 dark:text-gray-400 border-black/5 dark:border-white/5 hover:border-black/20 dark:hover:border-white/20 dark:hover:text-white'
                                     }`}
                                 >
-                                    #{tag.replace(/_/g, '')}
+                                    #{tag.replace(/_/g, ' ')}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Waifu.im Special Tags */}
-                    {options.sources.includes('waifu.im') && (
-                        <div className="animate-fade-in">
-                            <h4 className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-3">Waifu.im Tags</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {WAIFU_IM_VERSATILE_TAGS.map(tag => (
-                                        <button
-                                            key={tag}
-                                            onClick={() => handleTagClick(tag)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                                                options.tags.includes(tag)
-                                                    ? 'bg-violet-100 dark:bg-violet-600/20 text-violet-700 dark:text-violet-300 border-violet-500/50 shadow-sm'
-                                                    : 'bg-neutral-100 dark:bg-[#151515] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 border-black/5 dark:border-white/5 hover:border-black/20 dark:hover:border-white/20'
-                                            }`}
-                                        >
-                                            #{tag}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                    {WAIFU_IM_NSFW_TAGS.map(tag => (
-                                        <button
-                                            key={tag}
-                                            onClick={() => handleTagClick(tag)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                                                options.tags.includes(tag)
-                                                    ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/50 shadow-sm'
-                                                    : 'bg-neutral-100 dark:bg-[#151515] text-gray-500 hover:text-red-600 dark:hover:text-red-400 border-black/5 dark:border-white/5 hover:border-red-500/30'
-                                            }`}
-                                        >
-                                            #{tag}
-                                        </button>
-                                    ))}
-                                </div>
+                    {/* Waifu.im exclusive tags — only shown when waifu.im is an active/selected source */}
+                    {(options.sources.length === 0 || options.sources.includes('waifu.im')) && (
+                        <div className="pt-2">
+                            <h4 className="text-[10px] font-bold text-violet-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                <img src="https://waifu.im/favicon.ico" className="w-3 h-3" alt="" />
+                                Waifu.im Tags
+                            </h4>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {WAIFU_IM_VERSATILE_TAGS.map(tag => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => handleTagClick(tag)}
+                                        className={`px-2.5 py-1 text-[11px] rounded-full transition-all border ${
+                                            options.tags.includes(tag)
+                                                ? 'bg-violet-100 dark:bg-violet-600 text-violet-700 dark:text-white font-bold border-violet-500/50 dark:border-violet-600 shadow-sm'
+                                                : 'bg-neutral-100 dark:bg-[#1a1a1a] text-gray-500 hover:text-gray-700 dark:text-gray-400 border-black/5 dark:border-white/5 hover:border-black/20 dark:hover:border-white/20 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        #{tag}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {WAIFU_IM_NSFW_TAGS.map(tag => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => handleTagClick(tag)}
+                                        className={`px-2.5 py-1 text-[11px] rounded-full transition-all border ${
+                                            options.tags.includes(tag)
+                                                ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-bold border-red-400/50 shadow-sm'
+                                                : 'bg-neutral-100 dark:bg-[#1a1a1a] text-gray-500 hover:text-red-500 dark:text-gray-400 border-black/5 dark:border-white/5 hover:border-red-400/40'
+                                        }`}
+                                    >
+                                        🔞 #{tag}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Footer / Auth Info */}
                 <div className="p-6 border-t border-black/5 dark:border-white/5 bg-neutral-50 dark:bg-[#0a0a0a]">
                     <div className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
                         Vault v2.0 • Inspired by High Art
