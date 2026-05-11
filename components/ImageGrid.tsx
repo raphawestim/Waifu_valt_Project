@@ -14,7 +14,7 @@ export const ImageGrid = forwardRef<HTMLDivElement, ImageGridProps>(({ images, o
             {images.map((image, index) => {
                 return (
                     <div key={image.id} className="masonry-item">
-                        <ImageCard image={image} onClick={() => onImageClick(image, index)} />
+                        <ImageCard image={image} onClick={() => onImageClick(image, index)} isStandard={false} />
                     </div>
                 );
             })}

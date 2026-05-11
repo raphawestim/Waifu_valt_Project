@@ -37,10 +37,15 @@ const ArrowButton: React.FC<{ direction: 'left' | 'right', onClick: () => void, 
 );
 
 /** Build a working image URL: try proxy if original might be CORS-blocked */
-const getProxiedUrl = (url: string): string => {
+const getProxiedUrl = (url: string, type: 'internal' | 'external' = 'internal'): string => {
     if (!url) return '';
-    // Local ComfyUI files don't need proxying
     if (url.startsWith('/') || url.startsWith('blob:')) return url;
+    
+    if (type === 'external') {
+        // Use an external CORS proxy as a secondary fallback
+        return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    }
+    
     // Use local Vite image proxy for all external URLs to bypass CORS/referrer issues
     return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 };
@@ -51,13 +56,13 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
     const [showListMenu, setShowListMenu] = useState(false);
     const [newListName, setNewListName] = useState('');
     const [loading, setLoading] = useState(true);
-    const [useProxy, setUseProxy] = useState(false);
+    const [proxyState, setProxyState] = useState<'none' | 'internal' | 'external'>('none');
     const [showDetails, setShowDetails] = useState(false);
+    const [zoom, setZoom] = useState(1);
 
     // Determine current src
     const directUrl = image.fullUrl;
-    const isLocalUrl = directUrl.startsWith('/') || directUrl.startsWith('blob:');
-    const currentSrc = useProxy ? getProxiedUrl(directUrl) : directUrl;
+    const currentSrc = proxyState === 'none' ? directUrl : getProxiedUrl(directUrl, proxyState);
 
     useEffect(() => {
         setIsFavorited(isFavorite(image.id));
@@ -123,11 +128,14 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
     };
 
     const handleMediaError = () => {
-        if (!useProxy) {
+        if (proxyState === 'none') {
             // First failure → try through our local proxy
-            setUseProxy(true);
+            setProxyState('internal');
+        } else if (proxyState === 'internal') {
+            // Second failure → try through external proxy
+            setProxyState('external');
         } else {
-            // Both failed → stop loading
+            // All failed → stop loading
             setLoading(false);
         }
     };
@@ -141,7 +149,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                     {loading && <Spinner />}
                     {image.type === 'video' ? (
                         <video
-                            key={`${image.id}-${useProxy}`}
+                            key={`${image.id}-${proxyState}`}
                             src={currentSrc}
                             controls
                             autoPlay
@@ -150,6 +158,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                             playsInline
                             onLoadedData={() => setLoading(false)}
                             onError={handleMediaError}
+                            referrerPolicy="no-referrer"
                             onClick={(e) => e.stopPropagation()}
                             className={`max-w-full max-h-full object-contain transition-opacity duration-300 relative z-10 ${loading ? 'opacity-0' : 'opacity-100'}`}
                         >
@@ -157,7 +166,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                         </video>
                     ) : (
                         <img 
-                            key={`${image.id}-${useProxy}`}
+                            key={`${image.id}-${proxyState}`}
                             src={currentSrc} 
                             alt={image.tags.slice(0, 5).join(', ')} 
                             className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}

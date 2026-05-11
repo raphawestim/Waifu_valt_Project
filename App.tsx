@@ -16,10 +16,11 @@ import { NHentaiView } from './components/NHentaiView';
 import { R34VideoView } from './components/R34VideoView';
 import { R34VideoPlayerModal } from './components/R34VideoPlayerModal';
 import { HHView } from './components/HHView';
+import { MangaReaderModal } from './components/MangaReaderModal';
 import { searchImages, getRandomImages } from './services/imageService';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import type { WaifuImage, SearchOptions } from './types';
+import type { WaifuImage, SearchOptions, NHentaiGallery } from './types';
 import { DEFAULT_SEARCH_OPTIONS } from './constants';
 
 type ViewType = 'home' | 'explore' | 'profile' | 'comfyui' | 'nhentai' | 'rule34video' | 'hentaihaven' | 'artists' | 'characters' | 'metadata';
@@ -37,6 +38,7 @@ const AppContent: React.FC = () => {
     // Modal & Navigation State
     const [selectedImage, setSelectedImage] = useState<{ image: WaifuImage, index: number } | null>(null);
     const [selectedR34Video, setSelectedR34Video] = useState<any | null>(null);
+    const [selectedGallery, setSelectedGallery] = useState<NHentaiGallery | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isNsfwModalOpen, setIsNsfwModalOpen] = useState(false);
     const [nsfwCallbacks, setNsfwCallbacks] = useState<{ confirm: () => void, cancel: () => void } | null>(null);
@@ -70,6 +72,16 @@ const AppContent: React.FC = () => {
         };
         loadInitial();
     }, []);
+
+    // Enforce lock down on logout (No longer needed since NSFW is always on)
+    useEffect(() => {
+        if (!user) {
+            if (['nhentai', 'rule34video', 'hentaihaven'].includes(view)) {
+                setView('home');
+            }
+        }
+    }, [user, view]);
+    
     
     const handleFilterChange = (options: SearchOptions) => {
         setSearchOptions(options);
@@ -144,9 +156,15 @@ const AppContent: React.FC = () => {
             return;
         }
         
-        if (newView === 'profile' && !user) {
-            setIsAuthModalOpen(true);
-            return;
+        if (['profile', 'nhentai', 'rule34video', 'hentaihaven'].includes(newView)) {
+            if (!user) {
+                setIsAuthModalOpen(true);
+                return;
+            }
+            if (['nhentai', 'rule34video', 'hentaihaven'].includes(newView) && !searchOptions.isNsfwEnabled) {
+                // Ignore navigation if NSFW is not toggled on
+                return;
+            }
         }
 
         setView(newView as ViewType);
@@ -287,7 +305,12 @@ const AppContent: React.FC = () => {
                     onNavigateComfyUI={() => setView('comfyui')}
                     onNavigateArtists={() => setView('artists')}
                     onNavigateCharacters={() => setView('characters')}
-                    onNavigateMetadata={() => setView('metadata')}
+                    onNavigateProfile={() => setView('profile')}
+                    onSelectVideo={(v) => setSelectedR34Video(v)}
+                    onSelectGallery={(g) => {
+                        setSelectedGallery(g);
+                    }}
+                    onSelectAnime={() => setView('hentaihaven')}
                 />
                 {selectedImage && (
                     <ImageModal
@@ -338,6 +361,7 @@ const AppContent: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center gap-4">
+
                          {user ? (
                             <button onClick={() => handleNavigate('profile')} className="flex items-center gap-2 group">
                                 <span className="hidden sm:block text-sm text-gray-400 group-hover:text-white transition">{user.username}</span>
@@ -390,6 +414,13 @@ const AppContent: React.FC = () => {
                 <R34VideoPlayerModal 
                     videoInfo={selectedR34Video} 
                     onClose={() => setSelectedR34Video(null)} 
+                />
+            )}
+
+            {selectedGallery && (
+                <MangaReaderModal
+                    gallery={selectedGallery}
+                    onClose={() => setSelectedGallery(null)}
                 />
             )}
             

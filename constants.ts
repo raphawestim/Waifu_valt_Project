@@ -22,6 +22,10 @@ export const API_CONFIG = {
     baseUrl: 'https://yande.re/post.json',
     authParams: '',
   },
+  danbooru: {
+    baseUrl: 'https://danbooru.donmai.us/posts.json',
+    authParams: '&login=FioreDark&api_key=Q5P7zp1vVfqqqU4zDUWZnmhs',
+  },
 };
 
 export const API_FAVICONS: Record<SourceApi, string> = {
@@ -30,6 +34,8 @@ export const API_FAVICONS: Record<SourceApi, string> = {
   'rule34': 'https://rule34.xxx/favicon.ico',
   'konachan': 'https://konachan.net/favicon.ico',
   'yandere': 'https://yande.re/favicon.ico',
+  'kusowanka': 'https://kusowanka.com/favicon.ico',
+  'danbooru': 'https://danbooru.donmai.us/favicon.ico',
 };
 
 
@@ -43,7 +49,7 @@ export const WAIFU_IM_NSFW_TAGS = ['ass', 'hentai', 'milf', 'oral', 'paizuri', '
 // All valid waifu.im slugs in a Set for fast lookup
 export const WAIFU_IM_VALID_SLUGS = new Set([...WAIFU_IM_VERSATILE_TAGS, ...WAIFU_IM_NSFW_TAGS]);
 
-export const NSFW_SOURCES: SourceApi[] = ['rule34'];
+export const NSFW_SOURCES: SourceApi[] = [];
 
 export const DEFAULT_SEARCH_OPTIONS: SearchOptions = {
     query: '',
@@ -51,5 +57,5 @@ export const DEFAULT_SEARCH_OPTIONS: SearchOptions = {
     tags: [],
     sources: [],
     contentType: 'all',
-    isNsfwEnabled: false,
+    isNsfwEnabled: true,
 };

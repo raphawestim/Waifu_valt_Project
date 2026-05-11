@@ -51,13 +51,15 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images, onExploreCli
                         loop
                         playsInline
                         poster={currentImage.thumbnailUrl}
+                        referrerPolicy="no-referrer"
                     />
                 ) : (
-                    <img
-                        src={currentImage.fullUrl}
-                        alt="Featured"
-                        className="w-full h-full object-cover object-top"
-                    />
+                        <img
+                            src={currentImage.fullUrl}
+                            alt="Featured"
+                            className="w-full h-full object-cover object-top"
+                            referrerPolicy="no-referrer"
+                        />
                 )}
                 
                 <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent"></div>

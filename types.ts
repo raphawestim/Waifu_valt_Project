@@ -5,7 +5,7 @@ export interface WaifuImage {
   tags: string[];
   score: number;
   artist?: string;
-  sourceApi: 'gelbooru' | 'waifu.im' | 'rule34' | 'konachan' | 'yandere' | 'comfyui' | 'local';
+  sourceApi: 'gelbooru' | 'waifu.im' | 'rule34' | 'konachan' | 'yandere' | 'comfyui' | 'local' | 'kusowanka' | 'danbooru';
   rating: 'safe' | 'questionable' | 'explicit';
   width: number;
   height: number;
@@ -16,7 +16,7 @@ export interface WaifuImage {
 
 export type RatingFilter = 'safe' | 'questionable';
 
-export type SourceApi = 'gelbooru' | 'waifu.im' | 'rule34' | 'konachan' | 'yandere';
+export type SourceApi = 'gelbooru' | 'waifu.im' | 'rule34' | 'konachan' | 'yandere' | 'kusowanka' | 'danbooru';
 
 export interface SearchOptions {
   query: string;
@@ -28,8 +28,11 @@ export interface SearchOptions {
 }
 
 export interface User {
+  id?: string;
   username: string;
   token: string;
+  avatar_url?: string;
+  blacklistTags?: string;
 }
 
 export interface UserList {

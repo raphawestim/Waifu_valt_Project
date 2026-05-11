@@ -52,32 +52,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
 
     const toggleSource = (source: SourceApi) => {
-        const isNsfwSource = source === 'rule34';
-        
-        const applyToggle = () => {
-            setOptions(prev => {
-                const newSources = prev.sources.includes(source)
-                    ? prev.sources.filter(s => s !== source)
-                    : [...prev.sources, source];
-                
-                const updated = { ...prev, sources: newSources };
-                onFilterChange(updated);
-                return updated;
-            });
-        };
-
-        if (isNsfwSource && !options.isNsfwEnabled && !options.sources.includes(source)) {
-            onRequestNsfw(() => {
-                setOptions(prev => {
-                    const newSources = [...prev.sources, source];
-                    const updated = { ...prev, isNsfwEnabled: true, sources: newSources };
-                    onFilterChange(updated);
-                    return updated;
-                });
-            }, () => {});
-        } else {
-            applyToggle();
-        }
+        setOptions(prev => {
+            const newSources = prev.sources.includes(source)
+                ? prev.sources.filter(s => s !== source)
+                : [...prev.sources, source];
+            
+            const updated = { ...prev, sources: newSources };
+            onFilterChange(updated);
+            return updated;
+        });
     };
     
     const setContentType = (type: 'all' | 'images' | 'videos' | 'gifs') => {
@@ -87,29 +70,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
 
     const handleTagClick = (tag: string) => {
-        const isNsfwTag = WAIFU_IM_NSFW_TAGS.includes(tag);
-        
-        const applyTag = () => {
-            const newTags = options.tags.includes(tag)
-                ? options.tags.filter(t => t !== tag)
-                : [...options.tags, tag];
-            const updated = { ...options, tags: newTags };
-            setOptions(updated);
-            onFilterChange(updated);
-        };
-
-        if (isNsfwTag && !options.isNsfwEnabled && !options.tags.includes(tag)) {
-            onRequestNsfw(() => {
-                 setOptions(prev => {
-                    const newTags = [...prev.tags, tag];
-                    const updated = { ...prev, isNsfwEnabled: true, tags: newTags };
-                    onFilterChange(updated);
-                    return updated;
-                });
-            }, () => {});
-        } else {
-            applyTag();
-        }
+        const newTags = options.tags.includes(tag)
+            ? options.tags.filter(t => t !== tag)
+            : [...options.tags, tag];
+        const updated = { ...options, tags: newTags };
+        setOptions(updated);
+        onFilterChange(updated);
     };
 
     return (
@@ -210,6 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                         ComfyUI Studio
                     </button>
+                    
                     <button
                         onClick={() => onNavigate('nhentai')}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
@@ -269,7 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">APIs & Sources</h3>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                            {(['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere'] as const).map(source => (
+                            {(['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere', 'danbooru'] as SourceApi[]).map(source => (
                                 <button
                                     key={source}
                                     onClick={() => toggleSource(source)}
@@ -330,21 +297,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     </button>
                                 ))}
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {WAIFU_IM_NSFW_TAGS.map(tag => (
-                                    <button
-                                        key={tag}
-                                        onClick={() => handleTagClick(tag)}
-                                        className={`px-2.5 py-1 text-[11px] rounded-full transition-all border ${
-                                            options.tags.includes(tag)
-                                                ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-bold border-red-400/50 shadow-sm'
-                                                : 'bg-neutral-100 dark:bg-[#1a1a1a] text-gray-500 hover:text-red-500 dark:text-gray-400 border-black/5 dark:border-white/5 hover:border-red-400/40'
-                                        }`}
-                                    >
-                                        🔞 #{tag}
-                                    </button>
-                                ))}
-                            </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {WAIFU_IM_NSFW_TAGS.map(tag => (
+                                        <button
+                                            key={tag}
+                                            onClick={() => handleTagClick(tag)}
+                                            className={`px-2.5 py-1 text-[11px] rounded-full transition-all border ${
+                                                options.tags.includes(tag)
+                                                    ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-bold border-red-400/50 shadow-sm'
+                                                    : 'bg-neutral-100 dark:bg-[#1a1a1a] text-gray-500 hover:text-red-50 dark:text-gray-400 border-black/5 dark:border-white/5 hover:border-red-400/40'
+                                            }`}
+                                        >
+                                            🔞 #{tag}
+                                        </button>
+                                    ))}
+                                </div>
                         </div>
                     )}
                 </div>

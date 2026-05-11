@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const LogoIcon = () => (
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -17,8 +18,8 @@ const BellIcon = () => (
     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
 );
 
-const UserIcon = () => (
-    <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" className="w-8 h-8 rounded bg-gray-700 cursor-pointer" />
+const UserIcon = ({ avatarUrl, username }: { avatarUrl?: string | null, username?: string }) => (
+    <img src={avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username || 'default'}`} alt="User" className="w-8 h-8 rounded bg-gray-700 cursor-pointer object-cover" />
 );
 
 interface NavbarProps {
@@ -31,7 +32,8 @@ interface NavbarProps {
     currentView: string;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onSearch, onAuthClick, onLogoClick, onNavigate, currentView }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onSearch, onToggleSidebar, onAuthClick, onLogoClick, onNavigate, isLoggedIn, currentView }) => {
+    const { user } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [showSearchInput, setShowSearchInput] = useState(false);
     const [query, setQuery] = useState('');
@@ -108,10 +110,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearch, onAuthClick, onLogoCli
                          <BellIcon />
                     </div>
 
-                    <button onClick={onAuthClick} className="flex items-center group">
-                        <UserIcon />
+                    <button 
+                        onClick={() => isLoggedIn ? onNavigate('profile') : onAuthClick()} 
+                        className="flex items-center group"
+                    >
+                        <UserIcon avatarUrl={user?.avatar_url} username={user?.username} />
                         <span className={`ml-2 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block`}>
-                            Profile
+                            {isLoggedIn ? 'Profile' : 'Log In'}
                         </span>
                     </button>
                 </div>

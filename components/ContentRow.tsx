@@ -3,10 +3,10 @@ import React, { useRef, useState } from 'react';
 import type { WaifuImage } from '../types';
 import { ImageCard } from './ImageCard';
 
-interface ContentRowProps {
+interface ContentRowProps<T> {
     title: string;
-    images: WaifuImage[];
-    onImageClick: (image: WaifuImage) => void;
+    items: T[];
+    renderItem: (item: T) => React.ReactNode;
 }
 
 const ChevronLeft = () => (
@@ -17,7 +17,7 @@ const ChevronRight = () => (
     <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
 );
 
-export const ContentRow: React.FC<ContentRowProps> = ({ title, images, onImageClick }) => {
+export function ContentRow<T>({ title, items, renderItem }: ContentRowProps<T>) {
     const rowRef = useRef<HTMLDivElement>(null);
     const [isMoved, setIsMoved] = useState(false);
 
@@ -35,7 +35,7 @@ export const ContentRow: React.FC<ContentRowProps> = ({ title, images, onImageCl
         }
     };
 
-    if (images.length === 0) return null;
+    if (items.length === 0) return null;
 
     return (
         <div className="mb-8 group relative">
@@ -57,9 +57,9 @@ export const ContentRow: React.FC<ContentRowProps> = ({ title, images, onImageCl
                     ref={rowRef}
                     className="flex items-center space-x-2 overflow-x-scroll no-scrollbar px-4 md:px-12 scroll-smooth"
                 >
-                    {images.map((image) => (
-                        <div key={image.id} className="flex-none w-[160px] md:w-[220px] aspect-[2/3]">
-                            <ImageCard image={image} onClick={() => onImageClick(image)} />
+                    {items.map((item, idx) => (
+                        <div key={idx} className="flex-none w-[160px] md:w-[220px]">
+                            {renderItem(item)}
                         </div>
                     ))}
                 </div>
@@ -74,4 +74,4 @@ export const ContentRow: React.FC<ContentRowProps> = ({ title, images, onImageCl
             </div>
         </div>
     );
-};
+}

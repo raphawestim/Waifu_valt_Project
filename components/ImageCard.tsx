@@ -5,9 +5,10 @@ import type { WaifuImage } from '../types';
 interface ImageCardProps {
     image: WaifuImage;
     onClick: () => void;
+    isStandard?: boolean;
 }
 
-export const ImageCard: React.FC<ImageCardProps> = ({ image, onClick }) => {
+export const ImageCard: React.FC<ImageCardProps> = ({ image, onClick, isStandard = false }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [shouldPlay, setShouldPlay] = useState(false);
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -36,7 +37,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ image, onClick }) => {
             onMouseLeave={handleMouseLeave}
         >
             {/* Media Container */}
-            <div className="relative aspect-auto min-h-[150px]">
+            <div className={`relative w-full ${isStandard ? 'aspect-[2/3]' : 'aspect-auto'}`}>
                 {shouldPlay ? (
                     <div className="w-full h-full animate-fade-in">
                         {image.type === 'video' ? (
@@ -47,18 +48,20 @@ export const ImageCard: React.FC<ImageCardProps> = ({ image, onClick }) => {
                                 muted
                                 loop
                                 playsInline
+                                referrerPolicy="no-referrer"
                             />
                         ) : (
-                            <img src={image.fullUrl} className="w-full h-auto object-cover" alt="animated" />
+                            <img src={image.fullUrl} className="w-full h-auto object-cover" alt="animated" referrerPolicy="no-referrer" />
                         )}
                     </div>
                 ) : (
-                    <img
-                        src={image.thumbnailUrl}
-                        alt={image.tags[0]}
-                        className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                    />
+                        <img
+                            src={image.thumbnailUrl}
+                            alt={image.tags[0]}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                        />
                 )}
 
                 {/* Badges */}

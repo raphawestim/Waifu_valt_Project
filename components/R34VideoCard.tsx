@@ -13,14 +13,14 @@ export const R34VideoCard: React.FC<R34VideoCardProps> = ({ video, onClick }) =>
             className="group relative flex flex-col bg-neutral-900 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-white/5 hover:border-rose-500/50"
         >
             {/* Thumbnail Area */}
-            <div className="relative aspect-video w-full overflow-hidden bg-black/50">
+            <div className="relative aspect-[2/3] w-full overflow-hidden bg-black/50">
                 <img 
                     src={video.thumbnail || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"} 
                     alt={video.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
                 
                 {/* Duration Badge */}
                 {video.duration && (

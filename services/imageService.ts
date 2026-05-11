@@ -1,6 +1,7 @@
 
 import { API_CONFIG, WAIFU_IM_VALID_SLUGS } from '../constants';
 import type { WaifuImage, SearchOptions, SourceApi } from '../types';
+import { kusowankaService } from './kusowankaService';
 
 // External CORS proxies only used for API JSON fetching (not images)
 const API_PROXIES = [
@@ -112,6 +113,28 @@ const normalizeMoebooruPost = (post: any, sourceApi: 'konachan' | 'yandere'): Wa
     type: getFileType(post.file_url),
 });
 
+const normalizeDanbooruPost = (post: any): WaifuImage => {
+    const fullUrl = post.file_url || post.large_file_url || post.preview_file_url;
+    // Danbooru can have thumbnails in media_asset or directly in preview_file_url
+    const thumb = post.media_asset?.variants?.find((v: any) => v.type === '360x360')?.url || 
+                  post.preview_file_url || 
+                  post.large_file_url || 
+                  fullUrl;
+    
+    return {
+        id: `danbooru-${post.id}`,
+        thumbnailUrl: thumb,
+        fullUrl: fullUrl,
+        tags: (post.tag_string || '').split(' '),
+        score: post.score,
+        artist: post.tag_string_artist || 'unknown',
+        sourceApi: 'danbooru',
+        rating: post.rating === 's' ? 'safe' : post.rating === 'q' ? 'questionable' : 'explicit',
+        width: post.image_width,
+        height: post.image_height,
+        type: getFileType(fullUrl),
+    };
+};
 
 const fetchGelbooru = async (query: string, limit: number, page: number) => {
     const { baseUrl, authParams } = API_CONFIG.gelbooru;
@@ -199,6 +222,19 @@ const fetchYandere = async (query: string, limit: number, page: number) => {
     }
 };
 
+const fetchDanbooru = async (query: string, limit: number, page: number) => {
+    const { baseUrl, authParams } = API_CONFIG.danbooru;
+    const targetUrl = `${baseUrl}?tags=${encodeURIComponent(query)}&limit=${limit}&page=${page}${authParams || ''}`;
+    try {
+        const data = await fetchWithTimeout<any[]>(targetUrl);
+        if (!data || !Array.isArray(data)) return [];
+        return data.filter((p: any) => p.file_url).map(normalizeDanbooruPost);
+    } catch (error) {
+        return [];
+    }
+};
+
+
 const deduplicateImages = (images: WaifuImage[]): WaifuImage[] => {
     const seen = new Set<string>();
     return images.filter(image => {
@@ -211,8 +247,8 @@ const deduplicateImages = (images: WaifuImage[]): WaifuImage[] => {
 export const searchImages = async (options: SearchOptions, page: number): Promise<WaifuImage[]> => {
     const { query, limit, tags: selectedTags, sources: selectedSources, contentType, isNsfwEnabled } = options;
     const promises: Promise<WaifuImage[]>[] = [];
-    const allAvailableSources: SourceApi[] = ['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere'];
-    const activeSources = selectedSources.length > 0 ? selectedSources : allAvailableSources;
+    const allAvailableSources: SourceApi[] = ['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere', 'danbooru'];
+    let activeSources = selectedSources.length > 0 ? selectedSources : allAvailableSources;
 
     let booruQuery = [query, ...selectedTags].filter(Boolean).join(' ');
     if (contentType === 'videos') booruQuery += ' video';
@@ -225,6 +261,7 @@ export const searchImages = async (options: SearchOptions, page: number): Promis
     if (activeSources.includes('rule34')) promises.push(fetchRule34(booruQuery, limit, page));
     if (activeSources.includes('konachan')) promises.push(fetchKonachan(booruQuery, limit, page));
     if (activeSources.includes('yandere')) promises.push(fetchYandere(booruQuery, limit, page));
+    if (activeSources.includes('danbooru')) promises.push(fetchDanbooru(booruQuery, limit, page));
     // For waifu.im, filter to valid slugs from both query and tags
     if (activeSources.includes('waifu.im')) {
         const waifuTags = [query, ...selectedTags].filter(t => t && WAIFU_IM_VALID_SLUGS.has(t.toLowerCase()));
@@ -237,8 +274,13 @@ export const searchImages = async (options: SearchOptions, page: number): Promis
 
 export const getRandomImages = async (limit: number, options: SearchOptions): Promise<WaifuImage[]> => {
     const promises: Promise<WaifuImage[]>[] = [];
-    const allAvailableSources: SourceApi[] = ['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere'];
-    const activeSources = options.sources.length > 0 ? options.sources : allAvailableSources;
+    const allAvailableSources: SourceApi[] = ['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere', 'danbooru', 'kusowanka'];
+    let activeSources = options.sources.length > 0 ? options.sources : allAvailableSources;
+
+    // Force strict safe mode: only waifu.im allowed when NSFW is off
+    if (!options.isNsfwEnabled) {
+        activeSources = ['waifu.im'];
+    }
     const ratingFilter = options.isNsfwEnabled ? '' : ' -rating:explicit -rating:questionable';
     const konachanFilter = options.isNsfwEnabled ? '' : ' rating:safe';
 
@@ -246,6 +288,8 @@ export const getRandomImages = async (limit: number, options: SearchOptions): Pr
     if (activeSources.includes('rule34')) promises.push(fetchRule34(`sort:id:desc${ratingFilter}`, limit, 1));
     if (activeSources.includes('konachan')) promises.push(fetchKonachan(`order:id_desc${konachanFilter}`, limit, 1));
     if (activeSources.includes('yandere')) promises.push(fetchYandere(`order:id_desc${konachanFilter}`, limit, 1));
+    if (activeSources.includes('danbooru')) promises.push(fetchDanbooru(`order:random${konachanFilter}`, limit, 1));
+
     if (activeSources.includes('waifu.im')) promises.push(fetchWaifuIm(['waifu'], limit, 'all', options.isNsfwEnabled));
     
     const results = await Promise.all(promises);
@@ -348,36 +392,48 @@ const EXPLORER_FALLBACKS: Record<string, Record<string, string[]>> = {
 
 export const fetchExplorerTags = async (type: 'artists' | 'characters' | 'metadata' | 'artist' | 'character', letter: string): Promise<string[]> => {
     const normType = type === 'artists' ? 'artist' : type === 'characters' ? 'character' : type;
-    const gelbooruCat = GELBOORU_CATEGORY_MAP[normType];
-    const gelbooruAuth = API_CONFIG.gelbooru.authParams;
-    const letterPattern = letter === '#' ? '%25' : `${letter.toLowerCase()}%25`;
+    
+    // Danbooru categories: 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta
+    const danbooruCatMap: Record<string, number> = {
+        'artist': 1,
+        'character': 4,
+        'metadata': 0
+    };
+    const categoryId = danbooruCatMap[normType] ?? 0;
+    
+    // Danbooru uses * for wildcard search
+    const letterPattern = letter === '#' ? '*' : `${letter.toLowerCase()}*`;
 
-    // 1) Try Gelbooru tag API — fetch large batch, filter client-side by type
+    // 1) Danbooru tag API (Extremely accurate and high quality tags)
     try {
-        const gelbooruUrl = `https://gelbooru.com/index.php?page=dapi&s=tag&q=index&json=1&name_pattern=${letterPattern}&orderby=count&order=desc&limit=1000${gelbooruAuth}`;
-        const resp = await fetch(gelbooruUrl);
-        if (resp.ok) {
-            const data = await resp.json();
-            const tags = data?.tag;
-            if (Array.isArray(tags) && tags.length > 0) {
-                const filtered = tags
-                    .filter((t: any) => t.type === gelbooruCat && t.count > 10)
-                    .slice(0, 60)
-                    .map((t: any) => t.name);
-                if (filtered.length > 0) return filtered;
-            }
+        const { authParams } = API_CONFIG.danbooru;
+        const danbooruUrl = `https://danbooru.donmai.us/tags.json?search[name_matches]=${encodeURIComponent(letterPattern)}&search[category]=${categoryId}&search[order]=count&limit=60${authParams || ''}`;
+        
+        const data = await fetchWithTimeout<any[]>(danbooruUrl);
+        if (Array.isArray(data) && data.length > 0) {
+            const tags = data.filter(t => t.post_count > 10).map(t => t.name);
+            if (tags.length > 0) return tags;
         }
-    } catch (e) { console.warn('Gelbooru tag fetch failed:', e); }
+    } catch (e) { console.warn('Danbooru tag fetch failed:', e); }
 
-
-
-    // 3) Comprehensive hardcoded fallback
+    // 2) Comprehensive hardcoded fallback
     const letterKey = letter === '#' ? '#' : letter.toLowerCase();
     return EXPLORER_FALLBACKS[normType]?.[letterKey] || [];
 };
 
 export const getTagPreview = async (tag: string): Promise<string | null> => {
-    // 1) Gelbooru via CORS proxy (primary — Danbooru is Cloudflare-blocked)
+    // 1) Danbooru (Highest quality previews)
+    try {
+        const { baseUrl, authParams } = API_CONFIG.danbooru;
+        const danbooruUrl = `${baseUrl}?tags=${encodeURIComponent(tag)}&limit=1${authParams || ''}`;
+        const data = await fetchWithTimeout<any[]>(danbooruUrl);
+        if (data && data.length > 0) {
+            const url = data[0].media_asset?.variants?.find((v: any) => v.type === '360x360')?.url || data[0].preview_file_url || data[0].file_url || null;
+            return url ? `/api/proxy-image?url=${encodeURIComponent(url)}` : null;
+        }
+    } catch (e) {}
+
+    // 2) Gelbooru
     try {
         const gelbooruAuth = API_CONFIG.gelbooru.authParams;
         const gelbooruUrl = `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent(tag)}&limit=1${gelbooruAuth}`;
