@@ -1,6 +1,15 @@
 import * as cheerio from 'cheerio';
 import { R34VideoSearchResult, R34VideoDetails, R34VideoResponse } from './types';
 
+const BASE_URL = 'https://rule34video.com';
+
+const normalizeRule34VideoUrl = (url: string): string => {
+    if (!url) return '';
+    if (url.startsWith('//')) return `https:${url}`;
+    if (url.startsWith('/')) return `${BASE_URL}${url}`;
+    return url;
+};
+
 export function parseVideoList(html: string): R34VideoResponse {
     const $ = cheerio.load(html);
     const results: R34VideoSearchResult[] = [];
@@ -8,14 +17,20 @@ export function parseVideoList(html: string): R34VideoResponse {
     $('.item.thumb').each((_, el) => {
         const title = $(el).find('.thumb_title').text().trim();
         const aTag = $(el).find('a.th.js-open-popup');
-        const url = aTag.attr('href') || '';
+        const url = normalizeRule34VideoUrl(aTag.attr('href') || '');
         
         let id = '';
         const idMatch = url.match(/\/video\/(\d+)\//);
         if (idMatch) id = idMatch[1];
 
         const imgTag = $(el).find('img.thumb');
-        const thumbnail = imgTag.attr('data-original') || imgTag.attr('src') || '';
+        const thumbnail = normalizeRule34VideoUrl(
+            imgTag.attr('data-original') ||
+            imgTag.attr('data-src') ||
+            imgTag.attr('data-webp') ||
+            imgTag.attr('src') ||
+            ''
+        );
         
         const duration = $(el).find('.time').text().trim();
         const viewsStr = $(el).find('.views').text().trim();

@@ -87,18 +87,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
             )}
             
-            <aside className={`fixed top-0 left-0 h-full w-80 bg-white dark:bg-[#0d0d0d] border-r border-black/5 dark:border-white/5 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+            <aside className={`fixed top-0 left-0 h-full w-80 bg-white dark:bg-[#07070d] border-r border-black/5 dark:border-white/10 shadow-2xl shadow-black/50 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
                 isOpen ? 'translate-x-0' : '-translate-x-full'
             }`}>
-                <div className="p-6 border-b border-black/5 dark:border-white/5 sticky top-0 bg-white/80 dark:bg-[#0d0d0d]/80 backdrop-blur-md z-10 flex items-center justify-between">
+                <div className="p-6 border-b border-black/5 dark:border-white/10 sticky top-0 bg-white/80 dark:bg-[#07070d]/85 backdrop-blur-xl z-10 flex items-center justify-between">
                     <button 
                         onClick={() => onNavigate('home')} 
                         className="flex items-center gap-3 hover:opacity-75 transition-opacity focus:outline-none"
                     >
                         <LogoIcon />
-                        <h2 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
-                            WAIFU<span className="text-violet-600 dark:text-violet-500">VAULT</span>
-                        </h2>
+                        <div className="flex flex-col items-start">
+                            <h2 className="text-xl font-black tracking-tight text-gray-900 dark:text-white">
+                                WAIFU<span className="text-violet-600 dark:text-violet-400">VAULT</span>
+                            </h2>
+                            <span className="-mt-0.5 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.24em] text-red-300">
+                                NSFW
+                            </span>
+                        </div>
                     </button>
                     <button onClick={onClose} className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-white/10 rounded-lg text-gray-600 dark:text-gray-400">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -116,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 value={localQuery}
                                 onChange={(e) => setLocalQuery(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e as any)}
-                                className="w-full bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                className="w-full bg-neutral-100 dark:bg-black/35 border border-black/5 dark:border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-violet-500/15 focus:border-violet-400/60 transition-all"
                                 placeholder="Search tags..."
                             />
                         </div>
@@ -128,8 +133,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => onNavigate('explore')}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                             currentView === 'explore'
-                                ? 'bg-white dark:bg-[#1a1a1a] text-violet-600 dark:text-white shadow-sm border border-neutral-200 dark:border-white/10'
-                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300'
+                                ? 'bg-violet-500/15 text-violet-600 dark:text-white shadow-sm border border-violet-400/25'
+                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
@@ -156,8 +161,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => onNavigate('favorites')}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                             currentView === 'profile'
-                                ? 'bg-white dark:bg-[#1a1a1a] text-violet-600 dark:text-white shadow-sm border border-neutral-200 dark:border-white/10'
-                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300'
+                                ? 'bg-rose-500/10 text-rose-500 dark:text-white shadow-sm border border-rose-400/25'
+                                : 'text-gray-500 hover:bg-neutral-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
@@ -176,6 +181,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                         ComfyUI Studio
                     </button>
+                    <button
+                        onClick={() => onNavigate('prompt-lab')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'prompt-lab'
+                                ? 'bg-violet-500/10 text-violet-500 border-violet-500/20 shadow-sm border'
+                                : 'text-gray-500 hover:bg-violet-50 dark:hover:bg-violet-900/10 hover:text-violet-600 dark:hover:text-violet-400 border border-transparent'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3h6m-7 4h8m-9 4h10m-8 4h6m-3 6a9 9 0 100-18 9 9 0 000 18z"></path></svg>
+                        Prompt Lab
+                    </button>
+                    <button
+                        onClick={() => onNavigate('settings')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'settings'
+                                ? 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20 shadow-sm border'
+                                : 'text-gray-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/10 hover:text-cyan-600 dark:hover:text-cyan-400 border border-transparent'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        AI Settings
+                    </button>
                     
                     <button
                         onClick={() => onNavigate('nhentai')}
@@ -187,6 +214,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                         Manga / Doujins
+                    </button>
+                    <button
+                        onClick={() => onNavigate('ehentai')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            currentView === 'ehentai'
+                                ? 'bg-fuchsia-500/10 text-fuchsia-500 border-fuchsia-500/20 shadow-sm border'
+                                : 'text-gray-500 hover:bg-fuchsia-50 dark:hover:bg-fuchsia-900/10 hover:text-fuchsia-600 dark:hover:text-fuchsia-400 border border-transparent'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2m14 0V7a2 2 0 00-2-2h-1m-8 0H7a2 2 0 00-2 2v4m8-6v6"></path></svg>
+                        E-Hentai
                     </button>
                     <button
                         onClick={() => onNavigate('rule34video')}
@@ -214,14 +252,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="pt-8 block">
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Format</h4>
-                        <div className="grid grid-cols-4 gap-1 p-1 bg-neutral-100 dark:bg-[#151515] rounded-xl border border-black/5 dark:border-white/5">
+                        <div className="grid grid-cols-4 gap-1 p-1 bg-neutral-100 dark:bg-black/35 rounded-2xl border border-black/5 dark:border-white/10">
                         {(['all', 'images', 'videos', 'gifs'] as const).map(type => (
                             <button
                                 key={type}
                                 onClick={() => setContentType(type)}
                                 className={`py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
                                     options.contentType === type 
-                                        ? 'bg-white dark:bg-[#222] text-violet-600 dark:text-white shadow-sm' 
+                                        ? 'bg-white dark:bg-white text-violet-600 dark:text-black shadow-sm' 
                                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300'
                                 }`}
                             >
@@ -243,8 +281,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     title={source}
                                     className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all border ${
                                         options.sources.includes(source)
-                                            ? 'bg-violet-100 dark:bg-violet-600/20 border-violet-500/50 shadow-sm'
-                                            : 'bg-neutral-100 dark:bg-[#151515] border-transparent hover:border-black/10 dark:hover:border-white/10 opacity-70 hover:opacity-100 grayscale hover:grayscale-[0.5]'
+                                            ? 'bg-violet-100 dark:bg-violet-600/20 border-violet-400/50 shadow-[0_0_22px_rgba(139,92,246,0.14)]'
+                                            : 'bg-neutral-100 dark:bg-black/30 border-white/5 hover:border-black/10 dark:hover:border-white/15 opacity-75 hover:opacity-100 grayscale hover:grayscale-[0.5]'
                                     }`}
                                 >
                                     <img src={API_FAVICONS[source]} alt={source} className="w-6 h-6 mb-1 object-contain drop-shadow-sm" />
@@ -316,7 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}
                 </div>
 
-                <div className="p-6 border-t border-black/5 dark:border-white/5 bg-neutral-50 dark:bg-[#0a0a0a]">
+                <div className="p-6 border-t border-black/5 dark:border-white/10 bg-neutral-50 dark:bg-[#05050a]">
                     <div className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
                         Vault v2.0 • Inspired by High Art
                     </div>

@@ -7,11 +7,13 @@
     <meta name="referrer" content="no-referrer" />
     <title>Waifu Vault — High-Fidelity Anime Image Repository</title>
     <meta name="description" content="Browse, discover and collect high-quality anime images from waifu.im, Gelbooru, Danbooru and more. The ultimate waifu vault." />
-    <link rel="icon" type="image/png" href="/public/favicon.png" />
-    <link rel="shortcut icon" type="image/png" href="/public/favicon.png" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <script defer src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
@@ -88,6 +90,21 @@
         margin-bottom: 1rem;
       }
 
+      /* Premium responsive gallery grid */
+      .vault-gallery-grid {
+        columns: 1;
+        column-gap: 1.25rem;
+      }
+      @media (min-width: 560px) { .vault-gallery-grid { columns: 2; } }
+      @media (min-width: 1024px) { .vault-gallery-grid { columns: 3; } }
+      @media (min-width: 1440px) { .vault-gallery-grid { columns: 4; } }
+      @media (min-width: 1840px) { .vault-gallery-grid { columns: 5; } }
+
+      .vault-gallery-item {
+        break-inside: avoid;
+        margin-bottom: 1.25rem;
+      }
+
       /* Animations */
       @keyframes fade-in {
         from { opacity: 0; transform: translateY(4px); }
@@ -97,16 +114,6 @@
         animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>

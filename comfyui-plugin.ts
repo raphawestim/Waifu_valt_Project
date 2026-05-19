@@ -18,6 +18,108 @@ function isSafe(target: string, base: string): boolean {
     return normalTarget.startsWith(normalBase + path.sep) || normalTarget === normalBase;
 }
 
+const JSON_PROXY_ALLOWED_HOSTS = new Set([
+    'api.rule34.xxx',
+    'danbooru.donmai.us',
+    'gelbooru.com',
+    'konachan.net',
+    'yande.re',
+]);
+
+function fetchJsonThroughNode(targetUrl: string, timeout = 15000): Promise<{ statusCode: number; body: string }> {
+    return new Promise((resolve, reject) => {
+        const parsedUrl = new URL(targetUrl);
+        const httpModule = parsedUrl.protocol === 'https:' ? https : http;
+        const request = httpModule.get(parsedUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json,text/plain,*/*',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+            timeout,
+        }, response => {
+            let body = '';
+            response.setEncoding('utf8');
+            response.on('data', chunk => {
+                body += chunk;
+            });
+            response.on('end', () => {
+                resolve({ statusCode: response.statusCode || 500, body });
+            });
+        });
+
+        request.on('error', reject);
+        request.on('timeout', () => {
+            request.destroy(new Error('Proxy JSON timeout'));
+        });
+    });
+}
+
+function readJsonBody<T>(req: any): Promise<T> {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', (chunk: Buffer) => {
+            body += chunk.toString('utf8');
+        });
+        req.on('end', () => {
+            try {
+                resolve(body ? JSON.parse(body) as T : {} as T);
+            } catch (error) {
+                reject(error);
+            }
+        });
+        req.on('error', reject);
+    });
+}
+
+function sendJson(res: any, statusCode: number, payload: unknown): void {
+    res.statusCode = statusCode;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.end(JSON.stringify(payload));
+}
+
+async function proxyOllamaJson(baseUrl: string, pathName: string, body?: unknown): Promise<{ status: number; data: unknown }> {
+    const target = `${baseUrl.replace(/\/$/, '')}${pathName}`;
+    const response = await fetch(target, body === undefined ? undefined : {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    let data: unknown = {};
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = { response: text };
+    }
+    return { status: response.status, data };
+}
+
+function getMediaProxyHeaders(mediaUrl: string, range?: string): Record<string, string> {
+    const parsedUrl = new URL(mediaUrl);
+    let referer = `${parsedUrl.origin}/`;
+
+    if (parsedUrl.hostname.includes('gelbooru.com')) referer = 'https://gelbooru.com/';
+    else if (parsedUrl.hostname.includes('rule34.xxx')) referer = 'https://rule34.xxx/';
+    else if (parsedUrl.hostname.includes('danbooru.donmai.us')) referer = 'https://danbooru.donmai.us/';
+    else if (parsedUrl.hostname.includes('konachan')) referer = 'https://konachan.net/';
+    else if (parsedUrl.hostname.includes('yande.re')) referer = 'https://yande.re/';
+
+    const headers: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': referer,
+    };
+
+    if (range) {
+        headers['Range'] = range;
+    }
+
+    return headers;
+}
+
 /**
  * Extracts metadata from a PNG file.
  * Specifically looks for ComfyUI 'prompt' chunk.
@@ -103,6 +205,120 @@ export function comfyuiPlugin(): Plugin {
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
                 const url = req.url || '';
+
+                if (req.method === 'OPTIONS') {
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+                    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+                    res.end();
+                    return;
+                }
+
+                if (url.startsWith('/api/ollama/health')) {
+                    const parsed = new URL(url, 'http://localhost');
+                    const baseUrl = parsed.searchParams.get('baseUrl') || 'http://localhost:11434';
+                    proxyOllamaJson(baseUrl, '/api/tags')
+                        .then(result => sendJson(res, result.status < 500 ? 200 : 502, { online: result.status < 500 }))
+                        .catch(error => sendJson(res, 502, { online: false, error: `Ollama is not reachable: ${String(error)}` }));
+                    return;
+                }
+
+                if (url.startsWith('/api/ollama/models')) {
+                    const parsed = new URL(url, 'http://localhost');
+                    const baseUrl = parsed.searchParams.get('baseUrl') || 'http://localhost:11434';
+                    proxyOllamaJson(baseUrl, '/api/tags')
+                        .then(result => sendJson(res, result.status, result.data))
+                        .catch(error => sendJson(res, 502, { models: [], error: `Ollama is not reachable: ${String(error)}` }));
+                    return;
+                }
+
+                if (url === '/api/ollama/analyze-image' && req.method === 'POST') {
+                    readJsonBody<Record<string, unknown>>(req)
+                        .then(body => {
+                            const baseUrl = String(body.baseUrl || 'http://localhost:11434');
+                            const requestBody = { ...body };
+                            delete requestBody.baseUrl;
+                            return proxyOllamaJson(baseUrl, '/api/generate', {
+                                ...requestBody,
+                                stream: false,
+                            });
+                        })
+                        .then(result => sendJson(res, result.status, result.data))
+                        .catch(error => sendJson(res, 502, { error: `Ollama request failed: ${String(error)}` }));
+                    return;
+                }
+
+                if (url === '/api/ollama/chat' && req.method === 'POST') {
+                    readJsonBody<Record<string, unknown>>(req)
+                        .then(body => {
+                            const baseUrl = String(body.baseUrl || 'http://localhost:11434');
+                            const requestBody = { ...body };
+                            delete requestBody.baseUrl;
+                            return proxyOllamaJson(baseUrl, '/api/chat', {
+                                ...requestBody,
+                                stream: false,
+                            });
+                        })
+                        .then(result => sendJson(res, result.status, result.data))
+                        .catch(error => sendJson(res, 502, { error: `Ollama chat failed: ${String(error)}` }));
+                    return;
+                }
+
+                if (url === '/api/ollama/unload' && req.method === 'POST') {
+                    readJsonBody<Record<string, unknown>>(req)
+                        .then(body => {
+                            const baseUrl = String(body.baseUrl || 'http://localhost:11434');
+                            return proxyOllamaJson(baseUrl, '/api/generate', {
+                                model: body.model,
+                                prompt: '',
+                                keep_alive: 0,
+                                stream: false,
+                            });
+                        })
+                        .then(result => sendJson(res, result.status, result.data))
+                        .catch(error => sendJson(res, 200, { ok: false, error: `Unload request failed: ${String(error)}` }));
+                    return;
+                }
+
+                if (url.startsWith('/api/comfyui/status')) {
+                    const parsed = new URL(url, 'http://localhost');
+                    const baseUrl = parsed.searchParams.get('baseUrl') || `http://${COMFYUI_HOST}:${COMFYUI_PORT}`;
+                    fetch(`${baseUrl.replace(/\/$/, '')}/queue`, { signal: AbortSignal.timeout(3000) })
+                        .then(async response => {
+                            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                            const data = await response.json() as { queue_running?: unknown[]; queue_pending?: unknown[] };
+                            const queueRunning = Array.isArray(data.queue_running) ? data.queue_running.length : 0;
+                            const queuePending = Array.isArray(data.queue_pending) ? data.queue_pending.length : 0;
+                            sendJson(res, 200, {
+                                running: true,
+                                online: true,
+                                busy: queueRunning > 0 || queuePending > 0,
+                                queueRunning,
+                                queuePending,
+                                lastCheckedAt: new Date().toISOString(),
+                                error: null,
+                            });
+                        })
+                        .catch(error => {
+                            sendJson(res, 200, {
+                                running: false,
+                                online: false,
+                                busy: false,
+                                queueRunning: 0,
+                                queuePending: 0,
+                                lastCheckedAt: new Date().toISOString(),
+                                error: String(error),
+                            });
+                        });
+                    return;
+                }
+
+                if (url === '/api/comfyui/prompt' && req.method === 'POST') {
+                    readJsonBody<Record<string, unknown>>(req)
+                        .then(body => sendJson(res, 200, { ok: true, prepared: body.payload || null }))
+                        .catch(error => sendJson(res, 400, { ok: false, error: String(error) }));
+                    return;
+                }
 
                 // ── API: List folders ──
                 if (url === '/api/comfyui/folders') {
@@ -222,17 +438,7 @@ export function comfyuiPlugin(): Plugin {
                     const httpModule = imageUrl.startsWith('https') ? https : http;
 
                     // Build upstream headers — forward Range header if present for video seeking
-                    const upstreamHeaders: Record<string, string> = {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'image/*,video/*,*/*',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                        'sec-ch-ua-mobile': '?0',
-                        'sec-ch-ua-platform': '"Windows"',
-                    };
-                    if (req.headers['range']) {
-                        upstreamHeaders['Range'] = req.headers['range'] as string;
-                    }
+                    const upstreamHeaders = getMediaProxyHeaders(imageUrl, req.headers['range'] as string | undefined);
 
                     /** Pipe an upstream response back to the client, preserving range/seek headers */
                     const pipeResponse = (proxyRes: any) => {
@@ -264,15 +470,9 @@ export function comfyuiPlugin(): Plugin {
                     }, (proxyRes: any) => {
                         if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
                             // Follow redirects — also forward Range header
-                            const redirectUrl = proxyRes.headers.location;
+                            const redirectUrl = new URL(proxyRes.headers.location, imageUrl).toString();
                             const httpModule2 = redirectUrl.startsWith('https') ? https : http;
-                            const redirectHeaders: Record<string, string> = {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                                'Accept': 'image/*,video/*,*/*',
-                            };
-                            if (req.headers['range']) {
-                                redirectHeaders['Range'] = req.headers['range'] as string;
-                            }
+                            const redirectHeaders = getMediaProxyHeaders(redirectUrl, req.headers['range'] as string | undefined);
                             httpModule2.get(redirectUrl, {
                                 headers: redirectHeaders,
                                 timeout: 30000,
@@ -299,6 +499,46 @@ export function comfyuiPlugin(): Plugin {
                         res.statusCode = 504;
                         res.end(JSON.stringify({ error: 'Proxy timeout' }));
                     });
+
+                    return;
+                }
+
+                if (url.startsWith('/api/proxy-json')) {
+                    const parsed = new URL(url, 'http://localhost');
+                    const targetUrl = parsed.searchParams.get('url');
+
+                    res.setHeader('Content-Type', 'application/json');
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                    res.setHeader('Cache-Control', 'public, max-age=30');
+
+                    if (!targetUrl) {
+                        res.statusCode = 400;
+                        res.end(JSON.stringify({ error: 'Missing url parameter' }));
+                        return;
+                    }
+
+                    try {
+                        const upstreamUrl = new URL(targetUrl);
+                        const isAllowedProtocol = upstreamUrl.protocol === 'http:' || upstreamUrl.protocol === 'https:';
+                        if (!isAllowedProtocol || !JSON_PROXY_ALLOWED_HOSTS.has(upstreamUrl.hostname)) {
+                            res.statusCode = 400;
+                            res.end(JSON.stringify({ error: 'URL host is not allowed' }));
+                            return;
+                        }
+
+                        fetchJsonThroughNode(upstreamUrl.toString())
+                            .then(({ statusCode, body }) => {
+                                res.statusCode = 200;
+                                res.end(statusCode >= 400 ? JSON.stringify([]) : body || JSON.stringify([]));
+                            })
+                            .catch((err: any) => {
+                                res.statusCode = 200;
+                                res.end(JSON.stringify([]));
+                            });
+                    } catch (err) {
+                        res.statusCode = 400;
+                        res.end(JSON.stringify({ error: 'Invalid URL', detail: String(err) }));
+                    }
 
                     return;
                 }

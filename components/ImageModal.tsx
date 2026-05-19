@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { WaifuImage } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { Spinner } from './Spinner';
+import { useAI } from './AI/AIContext';
+import { sendPromptToComfyUI } from '../services/comfyuiService';
 
 const CloseIcon = () => (<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>);
 const DownloadIcon = () => (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>);
@@ -36,39 +38,79 @@ const ArrowButton: React.FC<{ direction: 'left' | 'right', onClick: () => void, 
     </button>
 );
 
-/** Build a working image URL: try proxy if original might be CORS-blocked */
-const getProxiedUrl = (url: string, type: 'internal' | 'external' = 'internal'): string => {
+const normalizeMediaUrl = (url: string): string => {
     if (!url) return '';
-    if (url.startsWith('/') || url.startsWith('blob:')) return url;
-    
-    if (type === 'external') {
-        // Use an external CORS proxy as a secondary fallback
-        return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    if (url.startsWith('//')) return `https:${url}`;
+    return url;
+};
+
+const isLocalMediaUrl = (url: string): boolean => (
+    url.startsWith('/') ||
+    url.startsWith('blob:') ||
+    url.startsWith('data:')
+);
+
+/** Build a working media URL through the local Vite proxy when hotlinking fails. */
+const getProxiedUrl = (url: string): string => {
+    const normalizedUrl = normalizeMediaUrl(url);
+    if (!normalizedUrl) return '';
+    if (isLocalMediaUrl(normalizedUrl)) return normalizedUrl;
+    return `/api/proxy-image?url=${encodeURIComponent(normalizedUrl)}`;
+};
+
+const shouldUseProxyFirst = (image: WaifuImage): boolean => {
+    const directUrl = normalizeMediaUrl(image.fullUrl);
+    if (!directUrl || isLocalMediaUrl(directUrl)) return false;
+    return image.type === 'video' || image.type === 'gif';
+};
+
+const getInitialProxyState = (image: WaifuImage): 'none' | 'internal' => (
+    shouldUseProxyFirst(image) ? 'internal' : 'none'
+);
+
+const getMediaSrc = (url: string, proxyState: 'none' | 'internal'): string => {
+    const normalizedUrl = normalizeMediaUrl(url);
+    if (!normalizedUrl) return '';
+    if (proxyState === 'internal') return getProxiedUrl(normalizedUrl);
+    return normalizedUrl;
+};
+
+const getFileNameFromUrl = (url: string): string => {
+    try {
+        const parsed = new URL(normalizeMediaUrl(url));
+        return parsed.pathname.split('/').pop() || 'waifu';
+    } catch {
+        return url.split('/').pop() || 'waifu';
     }
-    
-    // Use local Vite image proxy for all external URLs to bypass CORS/referrer issues
-    return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+};
+
+const getMediaLabel = (image: WaifuImage): string => {
+    if (image.type === 'video') return 'video';
+    if (image.type === 'gif') return 'GIF';
+    return 'image';
 };
 
 export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLoggedIn, onAuthRequest, onNext, onPrev, canNext, canPrev }) => {
     const { addFavorite, removeFavorite, isFavorite, lists, createList, addImageToList } = useAuth();
+    const { setPromptLabImage, sendToVaultChat } = useAI();
     const [isFavorited, setIsFavorited] = useState(false);
     const [showListMenu, setShowListMenu] = useState(false);
     const [newListName, setNewListName] = useState('');
     const [loading, setLoading] = useState(true);
-    const [proxyState, setProxyState] = useState<'none' | 'internal' | 'external'>('none');
+    const [proxyState, setProxyState] = useState<'none' | 'internal'>(() => getInitialProxyState(image));
+    const [loadFailed, setLoadFailed] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
     const [zoom, setZoom] = useState(1);
 
     // Determine current src
-    const directUrl = image.fullUrl;
-    const currentSrc = proxyState === 'none' ? directUrl : getProxiedUrl(directUrl, proxyState);
+    const directUrl = normalizeMediaUrl(image.fullUrl);
+    const currentSrc = getMediaSrc(directUrl, proxyState);
 
     useEffect(() => {
         setIsFavorited(isFavorite(image.id));
         setLoading(true);
-        // Videos always use proxy (for Range request / seeking support), unless local
-        setUseProxy(image.type === 'video' && !isLocalUrl);
+        setLoadFailed(false);
+        setProxyState(getInitialProxyState(image));
         setShowDetails(false);
     }, [image, isFavorite]);
 
@@ -117,7 +159,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                const fileName = image.fullUrl.split('/').pop() || 'waifu.jpg';
+                const fileName = getFileNameFromUrl(image.fullUrl);
                 a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
@@ -127,17 +169,49 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
             .catch(err => console.error('Error downloading image:', err));
     };
 
+    const openInPromptLab = () => {
+        setPromptLabImage({
+            imageUrl: image.fullUrl,
+            thumbnailUrl: image.thumbnailUrl,
+            imageId: image.id,
+            source: image.sourceApi,
+            tags: image.tags,
+        });
+        window.dispatchEvent(new CustomEvent('wv:navigate', { detail: { view: 'prompt-lab' } }));
+        onClose();
+    };
+
+    const sendToChat = () => {
+        sendToVaultChat({
+            image: {
+                imageUrl: image.fullUrl,
+                thumbnailUrl: image.thumbnailUrl,
+                imageId: image.id,
+                source: image.sourceApi,
+                tags: image.tags,
+            },
+            text: image.positivePrompt,
+        });
+    };
+
+    const sendImageToComfy = () => {
+        sendPromptToComfyUI({
+            positivePrompt: image.positivePrompt || image.tags.slice(0, 30).join(', '),
+            negativePrompt: image.negativePrompt || '',
+        }).then(() => {
+            window.dispatchEvent(new CustomEvent('wv:navigate', { detail: { view: 'comfyui' } }));
+            onClose();
+        });
+    };
+
     const handleMediaError = () => {
         if (proxyState === 'none') {
-            // First failure → try through our local proxy
             setProxyState('internal');
-        } else if (proxyState === 'internal') {
-            // Second failure → try through external proxy
-            setProxyState('external');
-        } else {
-            // All failed → stop loading
-            setLoading(false);
+            return;
         }
+
+        setLoading(false);
+        setLoadFailed(true);
     };
 
     return (
@@ -156,7 +230,9 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                             loop
                             muted
                             playsInline
+                            preload="metadata"
                             onLoadedData={() => setLoading(false)}
+                            onCanPlay={() => setLoading(false)}
                             onError={handleMediaError}
                             referrerPolicy="no-referrer"
                             onClick={(e) => e.stopPropagation()}
@@ -175,7 +251,22 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                             referrerPolicy="no-referrer"
                         />
                     )}
-                    
+                    {loadFailed && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center p-6 text-center">
+                            <div className="max-w-md rounded-xl border border-white/10 bg-black/80 p-5 text-white shadow-2xl">
+                                <p className="text-sm font-bold">Could not load this {getMediaLabel(image)}.</p>
+                                <a
+                                    href={directUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-3 inline-flex text-xs font-semibold text-violet-300 hover:text-violet-200"
+                                >
+                                    Open original source
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Navigation Arrows — pointer-events-none on wrapper so they don't block video controls */}
                     <div className="absolute inset-y-0 left-0 w-16 sm:w-20 flex items-center justify-start pointer-events-none z-20">
                         <div className="pointer-events-auto">
@@ -236,6 +327,15 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose, isLogged
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    <div className="mb-6 grid grid-cols-2 gap-2">
+                        <button onClick={openInPromptLab} className="rounded-xl bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700">Open in Prompt Lab</button>
+                        <button onClick={openInPromptLab} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white">Analyze with AI</button>
+                        <button onClick={openInPromptLab} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white">Generate SFW Prompt</button>
+                        <button onClick={openInPromptLab} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white">Generate NSFW Prompt</button>
+                        <button onClick={sendImageToComfy} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">Send to ComfyUI</button>
+                        <button onClick={sendToChat} className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white hover:bg-cyan-700">Send to Vault Chat</button>
                     </div>
 
                     <div className="space-y-2.5 sm:space-y-3 text-xs text-gray-500 border-t border-white/5 pt-4 sm:pt-6">

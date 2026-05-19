@@ -58,4 +58,5 @@ export const DEFAULT_SEARCH_OPTIONS: SearchOptions = {
     sources: [],
     contentType: 'all',
     isNsfwEnabled: true,
+    sortBy: 'newest',
 };

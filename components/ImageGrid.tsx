@@ -10,10 +10,10 @@ interface ImageGridProps {
 
 export const ImageGrid = forwardRef<HTMLDivElement, ImageGridProps>(({ images, onImageClick }, ref) => {
     return (
-        <div className="masonry-grid">
+        <div ref={ref} className="vault-gallery-grid">
             {images.map((image, index) => {
                 return (
-                    <div key={image.id} className="masonry-item">
+                    <div key={image.id} className="vault-gallery-item">
                         <ImageCard image={image} onClick={() => onImageClick(image, index)} isStandard={false} />
                     </div>
                 );

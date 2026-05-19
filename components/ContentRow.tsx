@@ -7,6 +7,8 @@ interface ContentRowProps<T> {
     title: string;
     items: T[];
     renderItem: (item: T) => React.ReactNode;
+    subtitle?: string;
+    variant?: 'poster' | 'landscape' | 'wide';
 }
 
 const ChevronLeft = () => (
@@ -17,7 +19,7 @@ const ChevronRight = () => (
     <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
 );
 
-export function ContentRow<T>({ title, items, renderItem }: ContentRowProps<T>) {
+export function ContentRow<T>({ title, items, renderItem, subtitle, variant = 'poster' }: ContentRowProps<T>) {
     const rowRef = useRef<HTMLDivElement>(null);
     const [isMoved, setIsMoved] = useState(false);
 
@@ -37,16 +39,28 @@ export function ContentRow<T>({ title, items, renderItem }: ContentRowProps<T>) 
 
     if (items.length === 0) return null;
 
+    const itemWidth = variant === 'landscape'
+        ? 'w-[280px] sm:w-[340px] lg:w-[410px]'
+        : variant === 'wide'
+            ? 'w-[220px] sm:w-[280px] lg:w-[320px]'
+            : 'w-[160px] md:w-[220px]';
+
     return (
-        <div className="mb-8 group relative">
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-100 mb-2 px-4 md:px-12 transition-colors hover:text-white cursor-pointer">
-                {title}
-            </h2>
+        <section className="mb-10 group relative">
+            <div className="mb-3 flex items-end justify-between gap-4 px-4 md:px-12">
+                <div>
+                    <h2 className="text-xl md:text-2xl font-black tracking-tight text-gray-100 transition-colors group-hover:text-white">
+                        {title}
+                    </h2>
+                    {subtitle && <p className="mt-1 text-xs text-gray-500 md:text-sm">{subtitle}</p>}
+                </div>
+                <div className="hidden h-px flex-1 bg-gradient-to-r from-violet-500/30 via-white/10 to-transparent md:block" />
+            </div>
             
             <div className="group/row relative">
                 {/* Left Arrow */}
                 <div 
-                    className={`absolute top-0 bottom-0 left-0 bg-black/50 z-40 w-12 flex items-center justify-center cursor-pointer transition-opacity duration-300 hover:bg-black/70 ${!isMoved ? 'hidden' : 'opacity-0 group-hover/row:opacity-100'}`}
+                    className={`absolute top-0 bottom-0 left-0 bg-gradient-to-r from-black via-black/70 to-transparent z-40 w-16 flex items-center justify-center cursor-pointer transition-opacity duration-300 ${!isMoved ? 'hidden' : 'opacity-0 group-hover/row:opacity-100'}`}
                     onClick={() => handleClick('left')}
                 >
                     <ChevronLeft />
@@ -55,10 +69,10 @@ export function ContentRow<T>({ title, items, renderItem }: ContentRowProps<T>) 
                 {/* Row Content */}
                 <div 
                     ref={rowRef}
-                    className="flex items-center space-x-2 overflow-x-scroll no-scrollbar px-4 md:px-12 scroll-smooth"
+                    className="flex items-stretch gap-3 overflow-x-scroll no-scrollbar px-4 pb-2 md:px-12 scroll-smooth"
                 >
                     {items.map((item, idx) => (
-                        <div key={idx} className="flex-none w-[160px] md:w-[220px]">
+                        <div key={idx} className={`flex-none ${itemWidth}`}>
                             {renderItem(item)}
                         </div>
                     ))}
@@ -66,12 +80,12 @@ export function ContentRow<T>({ title, items, renderItem }: ContentRowProps<T>) 
 
                 {/* Right Arrow */}
                 <div 
-                    className="absolute top-0 bottom-0 right-0 bg-black/50 z-40 w-12 flex items-center justify-center cursor-pointer opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 hover:bg-black/70"
+                    className="absolute top-0 bottom-0 right-0 bg-gradient-to-l from-black via-black/70 to-transparent z-40 w-16 flex items-center justify-center cursor-pointer opacity-0 group-hover/row:opacity-100 transition-opacity duration-300"
                     onClick={() => handleClick('right')}
                 >
                     <ChevronRight />
                 </div>
             </div>
-        </div>
+        </section>
     );
 }

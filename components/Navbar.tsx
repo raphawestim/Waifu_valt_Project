@@ -67,15 +67,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearch, onToggleSidebar, onAut
     );
 
     return (
-        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'bg-white dark:bg-[#141414]' : 'bg-gradient-to-b from-white/90 dark:from-black/90 to-transparent'}`}>
-            <div className="px-4 md:px-12 h-[68px] flex items-center justify-between">
+        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+            isScrolled
+                ? 'bg-[#08080d]/90 border-b border-white/10 shadow-2xl shadow-black/40 backdrop-blur-xl'
+                : 'bg-gradient-to-b from-black/85 via-black/35 to-transparent'
+        }`}>
+            <div className="px-4 md:px-12 h-[72px] flex items-center justify-between">
                 <div className="flex items-center gap-8">
                     <div 
                         className="flex items-center cursor-pointer mr-4"
                         onClick={onLogoClick}
                     >
                         <LogoIcon />
-                        <span className="text-2xl font-black text-violet-500 ml-2 tracking-tighter hidden sm:block">VAULT</span>
+                        <span className="text-2xl font-black text-white ml-2 tracking-tighter hidden sm:block">
+                            WAIFU<span className="text-violet-400">VAULT</span>
+                        </span>
+                        <span className="ml-2 hidden rounded-full border border-red-500/30 bg-red-950/60 px-2 py-0.5 text-[10px] font-black tracking-[0.18em] text-red-300 shadow-[0_0_18px_rgba(248,113,113,0.18)] sm:inline-flex">
+                            NSFW
+                        </span>
                     </div>
                     
                     <nav className="hidden md:flex items-center space-x-5">
@@ -87,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearch, onToggleSidebar, onAut
 
                 <div className="flex items-center space-x-6">
                     {/* Search Bar */}
-                    <div className={`flex items-center border ${showSearchInput ? 'border-white bg-black/80' : 'border-transparent bg-transparent'} transition-all duration-300 px-1 py-0.5`}>
+                    <div className={`flex items-center rounded-full border ${showSearchInput ? 'border-violet-400/50 bg-black/80 shadow-[0_0_24px_rgba(139,92,246,0.18)]' : 'border-white/10 bg-white/5'} transition-all duration-300 px-2 py-1 backdrop-blur-xl`}>
                         <button 
                             onClick={() => setShowSearchInput(!showSearchInput)} 
                             className="p-1 focus:outline-none"
@@ -106,7 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearch, onToggleSidebar, onAut
                         </form>
                     </div>
 
-                    <div className="hidden sm:block text-white cursor-pointer hover:text-gray-300 transition">
+                    <div className="hidden sm:block text-white/80 cursor-pointer hover:text-violet-300 transition">
                          <BellIcon />
                     </div>
 

@@ -39,7 +39,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images, onExploreCli
     const currentImage = images[currentIndex];
 
     return (
-        <div className="relative h-[56.25vw] max-h-[85vh] w-full overflow-hidden bg-[#141414]">
+        <section className="relative h-[92vh] min-h-[620px] w-full overflow-hidden bg-[#05050a]">
             {/* Background Image/Video with Fade Transition */}
             <div className={`absolute top-0 left-0 w-full h-full transition-opacity duration-1000 ease-in-out ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
                 {currentImage.type === 'video' ? (
@@ -50,68 +50,77 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images, onExploreCli
                         muted
                         loop
                         playsInline
+                        preload="metadata"
                         poster={currentImage.thumbnailUrl}
                         referrerPolicy="no-referrer"
                     />
                 ) : (
                         <img
-                            src={currentImage.fullUrl}
+                            src={currentImage.thumbnailUrl || currentImage.fullUrl}
                             alt="Featured"
-                            className="w-full h-full object-cover object-top"
+                            className="w-full h-full object-cover object-center scale-105"
+                            loading="eager"
+                            decoding="async"
+                            fetchPriority="high"
                             referrerPolicy="no-referrer"
                         />
                 )}
                 
-                <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#05050a] via-[#05050a]/55 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/35 to-transparent"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_48%,rgba(124,58,237,0.22),transparent_34%),radial-gradient(circle_at_75%_25%,rgba(14,165,233,0.12),transparent_30%)]"></div>
             </div>
 
             {/* Content Overlay */}
             <div className="absolute top-0 left-0 w-full h-full flex items-center">
-                <div className={`px-4 md:px-12 w-full md:w-1/2 pt-16 transition-all duration-1000 transform ${isTransitioning ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
-                    <h1 className="text-4xl md:text-7xl font-black text-white mb-4 drop-shadow-lg uppercase tracking-wide leading-none">
-                        {currentImage.tags[0] || "Waifu Vault"}
+                <div className={`px-5 md:px-12 w-full max-w-3xl pt-20 transition-all duration-1000 transform ${isTransitioning ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
+                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-950/30 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-violet-200 shadow-[0_0_28px_rgba(139,92,246,0.2)] backdrop-blur-xl">
+                        Premium local vault
+                        <span className="h-1 w-1 rounded-full bg-red-400" />
+                        NSFW curated
+                    </div>
+                    <h1 className="text-5xl md:text-8xl font-black text-white mb-5 drop-shadow-2xl uppercase tracking-tight leading-[0.88]">
+                        {currentImage.tags[0]?.replace(/_/g, ' ') || "Waifu Vault"}
                     </h1>
                     
-                    <div className="flex items-center space-x-2 mb-4 text-green-400 font-bold text-sm md:text-base">
-                        <span>98% Match</span>
-                        <span className="text-gray-400 font-normal">2024</span>
-                        <span className="border border-gray-500 text-gray-400 px-1 text-xs">HD</span>
-                        <span className="text-gray-400 capitalize text-xs border border-gray-600 px-1 rounded">{currentImage.sourceApi}</span>
+                    <div className="flex flex-wrap items-center gap-2 mb-5 text-sm md:text-base">
+                        <span className="rounded-full bg-emerald-500/10 px-3 py-1 font-bold text-emerald-300">98% Match</span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">2026</span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300">HD</span>
+                        <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-violet-200 capitalize">{currentImage.sourceApi}</span>
                     </div>
 
-                    <p className="text-white text-lg md:text-xl drop-shadow-md mb-8 line-clamp-3 text-shadow-lg max-w-2xl">
-                         Explore this stunning artwork featuring {currentImage.tags.slice(0, 3).join(', ')}. 
-                         Artist: <span className="text-violet-400">{currentImage.artist || 'Unknown'}</span>.
-                         Dive into a world of curated anime aesthetics.
+                    <p className="text-gray-100 text-base md:text-xl drop-shadow-md mb-8 line-clamp-3 max-w-2xl leading-relaxed">
+                         Explore a cinematic stream of {currentImage.tags.slice(0, 3).map(tag => tag.replace(/_/g, ' ')).join(', ')}.
+                         Curated from <span className="text-violet-300">{currentImage.sourceApi}</span> with premium dark-mode browsing.
                     </p>
                     
-                    <div className="flex space-x-4">
+                    <div className="flex flex-wrap gap-3">
                         <button 
                             onClick={() => onPlayClick(currentImage)}
-                            className="flex items-center justify-center px-6 md:px-8 py-2 md:py-3 bg-white text-black rounded font-bold text-lg hover:bg-opacity-80 transition shadow-lg"
+                            className="flex items-center justify-center rounded-xl bg-white px-6 py-3 text-base font-black text-black shadow-2xl shadow-white/10 transition hover:scale-[1.02] hover:bg-violet-100 md:px-8"
                         >
                             <PlayIcon /> {currentImage.type === 'video' ? 'Play' : 'View'}
                         </button>
                         <button 
                             onClick={onExploreClick}
-                            className="flex items-center justify-center px-6 md:px-8 py-2 md:py-3 bg-gray-500/70 text-white rounded font-bold text-lg hover:bg-gray-500/50 transition backdrop-blur-sm"
+                            className="flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-6 py-3 text-base font-black text-white shadow-2xl shadow-black/30 backdrop-blur-xl transition hover:bg-white/15 md:px-8"
                         >
-                            <InfoIcon /> More Info
+                            <InfoIcon /> Explore APIs
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Carousel Indicators */}
-            <div className="absolute right-4 md:right-12 bottom-32 md:bottom-48 flex space-x-2">
+            <div className="absolute right-4 md:right-12 bottom-32 md:bottom-40 flex space-x-2">
                 {images.map((_, idx) => (
                     <div 
                         key={idx} 
-                        className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-white scale-125' : 'bg-gray-500/50'}`}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-violet-300' : 'w-2 bg-gray-500/50'}`}
                     />
                 ))}
             </div>
-        </div>
+        </section>
     );
 };

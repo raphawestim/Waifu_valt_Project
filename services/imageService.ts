@@ -3,44 +3,25 @@ import { API_CONFIG, WAIFU_IM_VALID_SLUGS } from '../constants';
 import type { WaifuImage, SearchOptions, SourceApi } from '../types';
 import { kusowankaService } from './kusowankaService';
 
-// External CORS proxies only used for API JSON fetching (not images)
-const API_PROXIES = [
-    'https://api.codetabs.com/v1/proxy?quest=',
-    'https://corsproxy.io/?'
-];
-
-const getRandomApiProxy = () => API_PROXIES[Math.floor(Math.random() * API_PROXIES.length)];
-
-const fetchWithTimeout = async <T,>(url: string, options: RequestInit = {}, timeout = 60000): Promise<T> => {
+const fetchWithTimeout = async <T,>(url: string, options: RequestInit = {}, timeout = 15000): Promise<T> => {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
 
-    const proxy = getRandomApiProxy();
-    const finalUrl = `${proxy}${encodeURIComponent(url)}`;
-
     try {
-        const response = await fetch(finalUrl, {
+        const response = await fetch(`/api/proxy-json?url=${encodeURIComponent(url)}`, {
             ...options,
-            signal: controller.signal
+            signal: controller.signal,
         });
-        clearTimeout(id);
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return [] as any as T;
         }
-        
-        const data = await response.json();
-        return data as T;
-    } catch (e) {
-        // Retry once with a different proxy if it fails
-        const secondProxy = API_PROXIES[(API_PROXIES.indexOf(proxy) + 1) % API_PROXIES.length];
-        try {
-            const secondResponse = await fetch(`${secondProxy}${encodeURIComponent(url)}`, { ...options, signal: controller.signal });
-            if (secondResponse.ok) return await secondResponse.json();
-        } catch (e2) {}
-        
-        console.error(`Fetch failed for ${url}:`, e);
+
+        return await response.json() as T;
+    } catch {
         return [] as any as T;
+    } finally {
+        clearTimeout(id);
     }
 };
 
@@ -244,8 +225,21 @@ const deduplicateImages = (images: WaifuImage[]): WaifuImage[] => {
     });
 };
 
+const getNumericId = (id: string): number => {
+    const match = id.match(/(\d+)$/);
+    return match ? Number(match[1]) : 0;
+};
+
+const sortGalleryResults = (images: WaifuImage[], sortBy: SearchOptions['sortBy']): WaifuImage[] => {
+    const sorted = [...images];
+    if (sortBy === 'rating' || sortBy === 'trending' || sortBy === 'most_viewed') {
+        return sorted.sort((a, b) => (b.score || 0) - (a.score || 0));
+    }
+    return sorted.sort((a, b) => getNumericId(b.id) - getNumericId(a.id));
+};
+
 export const searchImages = async (options: SearchOptions, page: number): Promise<WaifuImage[]> => {
-    const { query, limit, tags: selectedTags, sources: selectedSources, contentType, isNsfwEnabled } = options;
+    const { query, limit, tags: selectedTags, sources: selectedSources, contentType, isNsfwEnabled, sortBy } = options;
     const promises: Promise<WaifuImage[]>[] = [];
     const allAvailableSources: SourceApi[] = ['waifu.im', 'gelbooru', 'rule34', 'konachan', 'yandere', 'danbooru'];
     let activeSources = selectedSources.length > 0 ? selectedSources : allAvailableSources;
@@ -269,7 +263,7 @@ export const searchImages = async (options: SearchOptions, page: number): Promis
     }
     
     const results = await Promise.all(promises);
-    return deduplicateImages(results.flat()).slice(0, limit);
+    return sortGalleryResults(deduplicateImages(results.flat()), sortBy).slice(0, limit);
 };
 
 export const getRandomImages = async (limit: number, options: SearchOptions): Promise<WaifuImage[]> => {
@@ -284,7 +278,7 @@ export const getRandomImages = async (limit: number, options: SearchOptions): Pr
     const ratingFilter = options.isNsfwEnabled ? '' : ' -rating:explicit -rating:questionable';
     const konachanFilter = options.isNsfwEnabled ? '' : ' rating:safe';
 
-    if (activeSources.includes('gelbooru')) promises.push(fetchGelbooru(`sort:id:desc${ratingFilter}`, limit, 1));
+    if (activeSources.includes('gelbooru')) promises.push(fetchGelbooru(`sort:random${ratingFilter}`, limit, 1));
     if (activeSources.includes('rule34')) promises.push(fetchRule34(`sort:id:desc${ratingFilter}`, limit, 1));
     if (activeSources.includes('konachan')) promises.push(fetchKonachan(`order:id_desc${konachanFilter}`, limit, 1));
     if (activeSources.includes('yandere')) promises.push(fetchYandere(`order:id_desc${konachanFilter}`, limit, 1));

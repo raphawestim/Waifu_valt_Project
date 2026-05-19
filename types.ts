@@ -17,6 +17,7 @@ export interface WaifuImage {
 export type RatingFilter = 'safe' | 'questionable';
 
 export type SourceApi = 'gelbooru' | 'waifu.im' | 'rule34' | 'konachan' | 'yandere' | 'kusowanka' | 'danbooru';
+export type GallerySortOption = 'newest' | 'trending' | 'most_viewed' | 'rating';
 
 export interface SearchOptions {
   query: string;
@@ -25,6 +26,7 @@ export interface SearchOptions {
   sources: SourceApi[];
   contentType: 'all' | 'images' | 'videos' | 'gifs';
   isNsfwEnabled?: boolean;
+  sortBy?: GallerySortOption;
 }
 
 export interface User {
