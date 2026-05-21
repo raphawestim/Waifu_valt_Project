@@ -15,6 +15,20 @@ import { API_FAVICONS, DEFAULT_SEARCH_OPTIONS } from './constants';
 import { AIProvider, useAI } from './components/AI/AIContext';
 import { VaultChatDrawer } from './components/VaultChat/VaultChatDrawer';
 import { LocalAIStatus } from './components/AI/LocalAIStatus';
+import { TheVaultPortal } from './areas/portal/pages/TheVaultPortal';
+import { GamesHome } from './areas/games/pages/GamesHome';
+import { TcgHome } from './areas/tcg/pages/TcgHome';
+import { MangaAnimeHome } from './areas/manga/pages/MangaAnimeHome';
+import { RpgHome } from './areas/rpg/pages/RpgHome';
+import { ForgeHome } from './areas/forge/pages/ForgeHome';
+import { LoginPage } from './areas/auth/pages/LoginPage';
+import { RegisterPage } from './areas/auth/pages/RegisterPage';
+import { UserProfilePage } from './areas/profile/pages/UserProfilePage';
+import { NsfwAccessModal } from './features/nsfwGate/components/NsfwAccessModal';
+import { useNsfwGate } from './features/nsfwGate/hooks/useNsfwGate';
+import { TheValtAreaSwitchButton } from './components/shell/TheValtAreaSwitchButton';
+import type { VaultId } from './data/vaultRegistry';
+import type { AppArea } from './types/app.types';
 
 const HomeView = React.lazy(() => import('./components/HomeView').then(module => ({ default: module.HomeView })));
 const ImageModal = React.lazy(() => import('./components/ImageModal').then(module => ({ default: module.ImageModal })));
@@ -31,6 +45,19 @@ const HHView = React.lazy(() => import('./components/HHView').then(module => ({ 
 const MangaReaderModal = React.lazy(() => import('./components/MangaReaderModal').then(module => ({ default: module.MangaReaderModal })));
 
 type ViewType = 'home' | 'explore' | 'profile' | 'comfyui' | 'prompt-lab' | 'settings' | 'nhentai' | 'ehentai' | 'rule34video' | 'hentaihaven' | 'artists' | 'characters' | 'metadata';
+
+const getAreaFromPath = (pathname: string): AppArea => {
+    if (pathname.startsWith('/login')) return 'login';
+    if (pathname.startsWith('/register')) return 'register';
+    if (pathname.startsWith('/profile')) return 'profile';
+    if (pathname.startsWith('/games')) return 'games';
+    if (pathname.startsWith('/tcg')) return 'tcg';
+    if (pathname.startsWith('/manga')) return 'manga';
+    if (pathname.startsWith('/rpg')) return 'rpg';
+    if (pathname.startsWith('/forge') || pathname.startsWith('/prompt-lab')) return 'forge';
+    if (pathname.startsWith('/nsfw')) return 'nsfw';
+    return 'portal';
+};
 
 const GallerySearchIcon = () => (
     <svg className="h-5 w-5 text-violet-200/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +137,7 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
                         </span>
                     </div>
                     <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-                        Vault Gallery
+                        The Vault NSFW
                     </h1>
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-400">
                         Browse unified image boards with richer previews, fast filters, source chips and creative AI actions right inside each card.
@@ -201,9 +228,12 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 };
 
 const AppContent: React.FC = () => {
-    const { user, favorites, lists } = useAuth();
+    const { user, favorites, lists, login, logout } = useAuth();
     const { promptLabImage, setPromptLabImage } = useAI();
+    const [activeArea, setActiveArea] = useState<AppArea>(() => getAreaFromPath(window.location.pathname));
     const [view, setView] = useState<ViewType>('home');
+    const currentUserId = user ? user.id || `local-${user.username}` : undefined;
+    const nsfwGate = useNsfwGate(currentUserId);
     
     // Core Data States
     const [gridImages, setGridImages] = useState<WaifuImage[]>([]);
@@ -222,6 +252,84 @@ const AppContent: React.FC = () => {
     const [galleryQuery, setGalleryQuery] = useState(DEFAULT_SEARCH_OPTIONS.query);
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+
+    const setAreaRoute = useCallback((area: AppArea, mode: 'push' | 'replace' = 'push') => {
+        const nextPath = area === 'portal' ? '/' : `/${area}`;
+        if (window.location.pathname !== nextPath) {
+            window.history[mode === 'push' ? 'pushState' : 'replaceState']({}, '', nextPath);
+        }
+        setActiveArea(area);
+        if (area !== 'nsfw') {
+            setView('home');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    const requestNsfwAreaAccess = useCallback(() => {
+        if (user && nsfwGate.hasAccess) {
+            setAreaRoute('nsfw');
+            setView('home');
+            return;
+        }
+        nsfwGate.openGate();
+    }, [nsfwGate, setAreaRoute, user]);
+
+    const handleEnterVault = useCallback((vaultId: VaultId) => {
+        if (vaultId === 'nsfw') {
+            requestNsfwAreaAccess();
+            return;
+        }
+        setAreaRoute(vaultId);
+    }, [requestNsfwAreaAccess, setAreaRoute]);
+
+    const enterNsfwArea = useCallback(() => {
+        nsfwGate.acceptTerms();
+        setAreaRoute('nsfw');
+        setView('home');
+    }, [nsfwGate, setAreaRoute]);
+
+    const navigateToLogin = useCallback(() => setAreaRoute('login'), [setAreaRoute]);
+    const navigateToRegister = useCallback(() => setAreaRoute('register'), [setAreaRoute]);
+    const navigateToProfile = useCallback(() => setAreaRoute('profile'), [setAreaRoute]);
+
+    const handleAuthSubmit = useCallback(async (username: string) => {
+        await login(username);
+        setAreaRoute('profile');
+    }, [login, setAreaRoute]);
+
+    const handleLogout = useCallback(() => {
+        logout();
+        setAreaRoute('portal', 'replace');
+    }, [logout, setAreaRoute]);
+
+    const leaveNsfwToPortal = useCallback(() => {
+        setAreaRoute('portal');
+        setView('home');
+    }, [setAreaRoute]);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            const nextArea = getAreaFromPath(window.location.pathname);
+            if (nextArea === 'nsfw' && (!user || !nsfwGate.hasAccess)) {
+                setAreaRoute('portal', 'replace');
+                nsfwGate.openGate();
+                return;
+            }
+            setActiveArea(nextArea);
+            setView('home');
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [nsfwGate, setAreaRoute, user]);
+
+    useEffect(() => {
+        if (activeArea !== 'nsfw') return;
+        if (user && nsfwGate.hasAccess) return;
+
+        setAreaRoute('portal', 'replace');
+        nsfwGate.openGate();
+    }, [activeArea, nsfwGate, setAreaRoute, user]);
 
     const executeSearch = useCallback(async (options: SearchOptions, page: number) => {
         setIsLoading(true);
@@ -262,11 +370,15 @@ const AppContent: React.FC = () => {
     // Enforce lock down on logout (No longer needed since NSFW is always on)
     useEffect(() => {
         if (!user) {
+            if (activeArea === 'nsfw') {
+                setAreaRoute('portal', 'replace');
+                setView('home');
+            }
             if (['nhentai', 'ehentai', 'rule34video', 'hentaihaven'].includes(view)) {
                 setView('home');
             }
         }
-    }, [user, view]);
+    }, [activeArea, setAreaRoute, user, view]);
 
     useEffect(() => {
         const handleNavigateEvent = (event: Event) => {
@@ -311,6 +423,14 @@ const AppContent: React.FC = () => {
 
     const handleGallerySortChange = (sortBy: GallerySortOption) => {
         handleFilterChange({ ...searchOptions, sortBy });
+    };
+
+    const handleConfirmNsfwAreaAccess = () => {
+        if (!user) {
+            setAreaRoute('login');
+            return;
+        }
+        enterNsfwArea();
     };
 
     const handleTagSelect = (tag: string, type?: 'artist' | 'character' | 'metadata') => {
@@ -508,6 +628,180 @@ const AppContent: React.FC = () => {
         return null;
     };
 
+    const showNsfwPortalCard = !(user && nsfwGate.settings.hideNsfwFromPortal);
+    const nsfwAccessModal = (
+        <NsfwAccessModal
+            isOpen={nsfwGate.isGateOpen}
+            isLoggedIn={!!user}
+            onClose={nsfwGate.closeGate}
+            onLoginRequest={navigateToLogin}
+            onRegisterRequest={navigateToRegister}
+            onProfileSettings={navigateToProfile}
+            onConfirm={handleConfirmNsfwAreaAccess}
+        />
+    );
+
+    if (activeArea === 'login') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <LoginPage
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onSubmit={handleAuthSubmit}
+                    onRegister={navigateToRegister}
+                />
+            </div>
+        );
+    }
+
+    if (activeArea === 'register') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <RegisterPage
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onSubmit={handleAuthSubmit}
+                    onLogin={navigateToLogin}
+                />
+            </div>
+        );
+    }
+
+    if (activeArea === 'profile') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <UserProfilePage
+                    user={user}
+                    favorites={favorites}
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onLogin={navigateToLogin}
+                    onRegister={navigateToRegister}
+                    onLogout={handleLogout}
+                    onSettingsChange={nsfwGate.refresh}
+                />
+            </div>
+        );
+    }
+
+    if (activeArea === 'portal') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <TheVaultPortal
+                    user={user}
+                    showNsfwCard={showNsfwPortalCard}
+                    onEnterVault={handleEnterVault}
+                    onLogin={navigateToLogin}
+                    onRegister={navigateToRegister}
+                    onProfile={navigateToProfile}
+                    onLogout={handleLogout}
+                />
+                {nsfwAccessModal}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
+    if (activeArea === 'games') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <GamesHome
+                    isLoggedIn={!!user}
+                    username={user?.username}
+                    userId={currentUserId}
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onEnterTcg={() => setAreaRoute('tcg')}
+                    onEnterManga={() => setAreaRoute('manga')}
+                    onEnterNsfw={requestNsfwAreaAccess}
+                    onLoginClick={navigateToLogin}
+                />
+                {nsfwAccessModal}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
+    if (activeArea === 'tcg') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <TcgHome
+                    isLoggedIn={!!user}
+                    username={user?.username}
+                    userId={currentUserId}
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onEnterNsfw={requestNsfwAreaAccess}
+                    onLoginClick={navigateToLogin}
+                />
+                {nsfwAccessModal}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
+    if (activeArea === 'manga') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <MangaAnimeHome
+                    isLoggedIn={!!user}
+                    username={user?.username}
+                    userId={currentUserId}
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onEnterGames={() => setAreaRoute('games')}
+                    onEnterNsfw={requestNsfwAreaAccess}
+                    onLoginClick={navigateToLogin}
+                />
+                {nsfwAccessModal}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
+    if (activeArea === 'rpg') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <RpgHome
+                    isLoggedIn={!!user}
+                    username={user?.username}
+                    userId={currentUserId}
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onEnterNsfw={requestNsfwAreaAccess}
+                    onLoginClick={navigateToLogin}
+                />
+                {nsfwAccessModal}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
+    if (activeArea === 'forge') {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <ForgeHome
+                    isLoggedIn={!!user}
+                    username={user?.username}
+                    onBackToPortal={() => setAreaRoute('portal')}
+                    onLoginClick={navigateToLogin}
+                />
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
+    if (activeArea === 'nsfw' && (!user || !nsfwGate.hasAccess)) {
+        return (
+            <div className="min-h-screen bg-[#05050a] text-white">
+                <TheVaultPortal
+                    user={user}
+                    showNsfwCard={showNsfwPortalCard}
+                    onEnterVault={handleEnterVault}
+                    onLogin={navigateToLogin}
+                    onRegister={navigateToRegister}
+                    onProfile={navigateToProfile}
+                    onLogout={handleLogout}
+                />
+                {nsfwAccessModal}
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+            </div>
+        );
+    }
+
     const subView = renderSubView();
     if (subView) {
         return (
@@ -547,6 +841,12 @@ const AppContent: React.FC = () => {
                         setView('prompt-lab');
                     }}
                     onOpenComfyUI={() => setView('comfyui')}
+                />
+                <TheValtAreaSwitchButton
+                    targetArea="portal"
+                    label="The Vault Portal"
+                    caption="Choose another vault"
+                    onClick={leaveNsfwToPortal}
                 />
             </div>
         );
@@ -590,6 +890,12 @@ const AppContent: React.FC = () => {
                     onOpenPromptLab={() => setView('prompt-lab')}
                     onOpenComfyUI={() => setView('comfyui')}
                 />
+                <TheValtAreaSwitchButton
+                    targetArea="portal"
+                    label="The Vault Portal"
+                    caption="Choose another vault"
+                    onClick={leaveNsfwToPortal}
+                />
             </div>
         );
     }
@@ -621,7 +927,7 @@ const AppContent: React.FC = () => {
                             </button>
                         )}
                         <h1 className="text-base font-black uppercase tracking-[0.18em] text-white sm:text-lg">
-                            {view === 'explore' ? 'Vault Gallery' : 'Personal Collection'}
+                            {view === 'explore' ? 'The Vault NSFW' : 'Personal Collection'}
                         </h1>
                     </div>
                     
@@ -720,6 +1026,12 @@ const AppContent: React.FC = () => {
             <VaultChatDrawer
                 onOpenPromptLab={() => setView('prompt-lab')}
                 onOpenComfyUI={() => setView('comfyui')}
+            />
+            <TheValtAreaSwitchButton
+                targetArea="portal"
+                label="The Vault Portal"
+                caption="Choose another vault"
+                onClick={leaveNsfwToPortal}
             />
         </div>
     );

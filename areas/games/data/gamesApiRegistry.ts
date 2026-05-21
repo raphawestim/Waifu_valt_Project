@@ -1,0 +1,76 @@
+import type { GameApiRegistryItem } from '../types/games.types';
+
+export const gamesApiRegistry: GameApiRegistryItem[] = [
+  {
+    id: 'scryfall',
+    name: 'Scryfall',
+    category: 'Magic: The Gathering',
+    description: 'Card search, images, oracle text, sets, rulings and price metadata for MTG workflows.',
+    status: 'active',
+    tags: ['MTG', 'cards', 'sets', 'prices', 'rulings'],
+    baseUrl: 'https://api.scryfall.com',
+    docsUrl: 'https://scryfall.com/docs/api',
+  },
+  {
+    id: 'pokeapi',
+    name: 'PokeAPI',
+    category: 'Pokemon Data',
+    description: 'Pokemon, types, sprites, abilities, moves and stats from the public Pokemon REST API.',
+    status: 'active',
+    tags: ['pokemon', 'sprites', 'types', 'abilities', 'stats'],
+    baseUrl: 'https://pokeapi.co/api/v2',
+    docsUrl: 'https://pokeapi.co/docs/v2',
+  },
+  {
+    id: 'apitcg',
+    name: 'APITCG',
+    category: 'Trading Card Game APIs',
+    description: 'Planned adapter slot for Pokemon TCG, Yu-Gi-Oh!, Flesh and Blood and other future card sources.',
+    status: 'planned',
+    tags: ['tcg', 'card art', 'collections', 'decks'],
+  },
+  {
+    id: 'rawg',
+    name: 'RAWG',
+    category: 'Games Database',
+    description: 'Games, platforms, screenshots, genres, stores and broader game metadata. Requires an API key.',
+    status: 'planned',
+    tags: ['games', 'platforms', 'screenshots', 'genres', 'stores'],
+    baseUrl: 'https://api.rawg.io/api',
+    docsUrl: 'https://rawg.io/apidocs',
+    requiresApiKey: true,
+  },
+  {
+    id: 'igdb',
+    name: 'IGDB',
+    category: 'Future Game Intelligence',
+    description: 'Future integration for rich game metadata, franchises, companies, media and release intelligence.',
+    status: 'planned',
+    tags: ['future', 'metadata', 'releases', 'companies'],
+    docsUrl: 'https://api-docs.igdb.com/',
+    requiresApiKey: true,
+  },
+  {
+    id: 'giantbomb',
+    name: 'GiantBomb',
+    category: 'Future Game Intelligence',
+    description: 'Future integration for editorial game database metadata, characters, concepts and franchises.',
+    status: 'planned',
+    tags: ['future', 'database', 'franchises', 'characters'],
+    docsUrl: 'https://www.giantbomb.com/api/documentation',
+    requiresApiKey: true,
+  },
+  {
+    id: 'steamgriddb',
+    name: 'SteamGridDB',
+    category: 'Future Asset Metadata',
+    description: 'Future integration for game artwork, grids, heroes, logos and launcher-ready visual assets.',
+    status: 'planned',
+    tags: ['future', 'artwork', 'logos', 'assets'],
+    docsUrl: 'https://www.steamgriddb.com/api/v2',
+    requiresApiKey: true,
+  },
+];
+
+export const activeGameApis = gamesApiRegistry.filter((api) => api.status === 'active');
+export const plannedGameApis = gamesApiRegistry.filter((api) => api.status !== 'active');

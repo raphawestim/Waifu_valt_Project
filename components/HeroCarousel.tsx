@@ -80,7 +80,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images, onExploreCli
                         NSFW curated
                     </div>
                     <h1 className="text-5xl md:text-8xl font-black text-white mb-5 drop-shadow-2xl uppercase tracking-tight leading-[0.88]">
-                        {currentImage.tags[0]?.replace(/_/g, ' ') || "Waifu Vault"}
+                        {currentImage.tags[0]?.replace(/_/g, ' ') || "The Vault NSFW"}
                     </h1>
                     
                     <div className="flex flex-wrap items-center gap-2 mb-5 text-sm md:text-base">

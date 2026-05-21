@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, WaifuImage, UserList } from '../types';
+import { addGlobalFavorite, getGlobalFavorites, removeGlobalFavorite } from '../services/userProfileService';
 
 interface AuthContextType {
     user: User | null;
@@ -67,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 body: JSON.stringify({ username })
             });
             const data = await res.json();
+            if (!data?.id) throw new Error('Local auth fallback');
             const token = `mock-token-${Date.now()}`;
             const newUser = { id: data.id, username: data.username, avatar_url: data.avatar_url, blacklistTags: data.blacklistTags, token };
             setUser(newUser);
@@ -87,8 +89,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     type: f.type
                 })));
             }
-        } catch (e) {
-            console.error('Login failed', e);
+        } catch {
+            const token = `local-token-${Date.now()}`;
+            const newUser = {
+                id: `local-${username.trim().toLowerCase().replace(/\s+/g, '-')}`,
+                username: username.trim(),
+                avatar_url: '',
+                blacklistTags: '',
+                token,
+            };
+            setUser(newUser);
+            localStorage.setItem('waifu-vault-user', JSON.stringify(newUser));
         }
     };
 
@@ -121,6 +132,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!user?.id) return;
         // Optimistic update
         setFavorites(prev => [...prev.filter(fav => fav.id !== image.id), image]);
+        addGlobalFavorite({
+            userId: user.id,
+            vault: 'nsfw',
+            type: image.type === 'video' ? 'video' : 'image',
+            source: image.sourceApi,
+            externalId: image.id,
+            title: image.tags[0]?.replace(/_/g, ' ') || 'Vault NSFW favorite',
+            thumbnailUrl: image.thumbnailUrl,
+            metadata: { rating: image.rating, type: image.type },
+        });
         try {
             await fetch('/api/favorites/add', {
                 method: 'POST',
@@ -136,6 +157,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!user?.id) return;
         // Optimistic update
         setFavorites(prev => prev.filter(fav => fav.id !== imageId));
+        const globalFavorite = getGlobalFavorites(user.id).find((item) => item.vault === 'nsfw' && item.externalId === imageId);
+        if (globalFavorite) removeGlobalFavorite(user.id, globalFavorite.id);
         try {
             await fetch('/api/favorites/remove', {
                 method: 'POST',

@@ -7,6 +7,7 @@ import r34videoPlugin from './r34video-plugin';
 import hhPlugin from './hh-plugin';
 import { prismaPlugin } from './prisma-plugin';
 import { ehentaiPlugin } from './ehentai-plugin';
+import { igdbPlugin } from './igdb-plugin';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -15,7 +16,7 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [react(), comfyuiPlugin(), nhentaiPlugin(env.NHENTAI_API_KEY), r34videoPlugin(), hhPlugin(), ehentaiPlugin(), prismaPlugin()],
+      plugins: [react(), comfyuiPlugin(), nhentaiPlugin(env.NHENTAI_API_KEY), r34videoPlugin(), hhPlugin(), ehentaiPlugin(), prismaPlugin(), igdbPlugin({ clientId: env.VITE_IGDB_CLIENT_ID, clientSecret: env.IGDB_CLIENT_SECRET })],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),

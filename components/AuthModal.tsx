@@ -36,7 +36,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                            placeholder="e.g., WaifuLover69"
+                            placeholder="e.g., VaultKeeper"
                         />
                     </div>
                     <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-lg transition">

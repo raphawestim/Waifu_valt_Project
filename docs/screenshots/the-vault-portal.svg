@@ -1,0 +1,57 @@
+<svg width="1440" height="760" viewBox="0 0 1440 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1440" height="760" fill="#05050A"/>
+  <circle cx="230" cy="40" r="360" fill="#7C3AED" opacity="0.16"/>
+  <circle cx="1130" cy="150" r="280" fill="#06B6D4" opacity="0.10"/>
+  <text x="74" y="110" fill="#DDD6FE" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="900" letter-spacing="5">THE VAULT PORTAL</text>
+  <text x="74" y="205" fill="white" font-family="Inter,Arial,sans-serif" font-size="88" font-weight="900">The Vault</text>
+  <text x="78" y="252" fill="#F3F4F6" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="800">Choose your vault</text>
+  <text x="78" y="294" fill="#9CA3AF" font-family="Inter,Arial,sans-serif" font-size="18">Games, TCG decks, manga/anime discovery, RPG campaigns, AI tooling and private workflows.</text>
+  <g transform="translate(74 360)">
+    <rect width="202" height="270" rx="26" fill="#07111B" stroke="#67E8F9" stroke-opacity="0.35"/>
+    <text x="24" y="46" fill="#A5F3FC" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="3">ACTIVE</text>
+    <text x="24" y="98" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Vault</text>
+    <text x="24" y="132" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Games</text>
+    <text x="24" y="178" fill="#CBD5E1" font-family="Inter,Arial,sans-serif" font-size="14">Discover, track, rate</text>
+    <rect x="24" y="214" width="154" height="36" rx="14" fill="#0891B2"/>
+  </g>
+  <g transform="translate(306 360)">
+    <rect width="202" height="270" rx="26" fill="#110A18" stroke="#C4B5FD" stroke-opacity="0.35"/>
+    <text x="24" y="46" fill="#DDD6FE" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="3">BETA</text>
+    <text x="24" y="98" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Vault</text>
+    <text x="24" y="132" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">TCG</text>
+    <text x="24" y="178" fill="#CBD5E1" font-family="Inter,Arial,sans-serif" font-size="14">Cards and decks</text>
+    <rect x="24" y="214" width="154" height="36" rx="14" fill="#7C3AED"/>
+  </g>
+  <g transform="translate(538 360)">
+    <rect width="202" height="270" rx="26" fill="#120816" stroke="#F0ABFC" stroke-opacity="0.35"/>
+    <text x="24" y="46" fill="#F5D0FE" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="3">ACTIVE</text>
+    <text x="24" y="98" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Vault</text>
+    <text x="24" y="132" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Manga</text>
+    <text x="24" y="178" fill="#CBD5E1" font-family="Inter,Arial,sans-serif" font-size="14">Reading library</text>
+    <rect x="24" y="214" width="154" height="36" rx="14" fill="#C026D3"/>
+  </g>
+  <g transform="translate(770 360)">
+    <rect width="202" height="270" rx="26" fill="#160D08" stroke="#FCD34D" stroke-opacity="0.35"/>
+    <text x="24" y="46" fill="#FDE68A" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="3">BETA</text>
+    <text x="24" y="98" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Vault</text>
+    <text x="24" y="132" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">RPG</text>
+    <text x="24" y="178" fill="#CBD5E1" font-family="Inter,Arial,sans-serif" font-size="14">D&amp;D campaigns</text>
+    <rect x="24" y="214" width="154" height="36" rx="14" fill="#B45309"/>
+  </g>
+  <g transform="translate(1002 360)">
+    <rect width="202" height="270" rx="26" fill="#07130F" stroke="#6EE7B7" stroke-opacity="0.35"/>
+    <text x="24" y="46" fill="#A7F3D0" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="3">PLANNED</text>
+    <text x="24" y="98" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Vault</text>
+    <text x="24" y="132" fill="white" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="900">Forge</text>
+    <text x="24" y="178" fill="#CBD5E1" font-family="Inter,Arial,sans-serif" font-size="14">AI prompt tools</text>
+    <rect x="24" y="214" width="154" height="36" rx="14" fill="#059669"/>
+  </g>
+  <g transform="translate(1234 360)">
+    <rect width="154" height="270" rx="26" fill="#16070B" stroke="#FDA4AF" stroke-opacity="0.35"/>
+    <text x="22" y="46" fill="#FFE4E6" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="3">18+</text>
+    <text x="22" y="98" fill="white" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="900">Vault</text>
+    <text x="22" y="128" fill="white" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="900">NSFW</text>
+    <text x="22" y="178" fill="#CBD5E1" font-family="Inter,Arial,sans-serif" font-size="13">Protected</text>
+    <rect x="22" y="214" width="110" height="36" rx="14" fill="#BE123C"/>
+  </g>
+</svg>

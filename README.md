@@ -1,395 +1,309 @@
-# Waifu Vault
+# The Vault
 
-**Waifu Vault** is a premium local-first media exploration and creative AI workspace built with React, TypeScript and Vite. It combines a modern dark-mode gallery, multiple anime/booru/video/doujin sources, local ComfyUI tooling, Ollama-powered prompt engineering, Prompt Lab, Vault Chat and specialized parsers into one cohesive desktop-like web application.
+![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=111)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=fff)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=fff)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Utility_UI-06B6D4?logo=tailwindcss&logoColor=fff)
+![Local First](https://img.shields.io/badge/Storage-Local_First-10B981)
+![NSFW Gate](https://img.shields.io/badge/NSFW-Protected-DC2626)
+![Roadmap](https://img.shields.io/badge/Roadmap-Fastify%20%2B%20Prisma%20%2B%20PostgreSQL-7C3AED)
 
-The project is designed for users who collect, browse, analyze and transform anime-style media while keeping the creative workflow local whenever possible.
+**The Vault** is a modular personal command center for games, TCG decks, manga/anime discovery, D&D/RPG tools, AI prompt workflows, private media browsing and a global user profile.
 
-> This project includes NSFW-capable browsing tools. Use responsibly, follow local laws, respect source terms, and do not use the application for illegal, non-consensual, real-person sexualization, minors, childlike content, deepfakes or abusive content.
+The project started as a single adult media workspace and is being refactored into a broader ecosystem of isolated Vaults. The current frontend is built with **React**, **TypeScript**, **Vite** and **TailwindCSS**, with a local-first persistence layer that is prepared for a future backend using **Fastify**, **Prisma**, **PostgreSQL**, **Redis** and Docker Compose.
+
+> Security note: API keys and secrets must not be committed. Any secrets previously shared in chat should be treated as compromised and rotated before production use.
+
+![The Vault Portal](docs/screenshots/the-vault-portal.svg)
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Features](#core-features)
-- [Screens and Modules](#screens-and-modules)
-- [Local AI and ComfyUI](#local-ai-and-comfyui)
-- [Supported Sources](#supported-sources)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Requirements](#requirements)
-- [Installation](#installation)
+- [Product Overview](#product-overview)
+- [Current Status](#current-status)
+- [Vaults](#vaults)
+- [Architecture](#architecture)
+- [Security Model](#security-model)
 - [Environment Variables](#environment-variables)
-- [Running the App](#running-the-app)
-- [Configuration Notes](#configuration-notes)
-- [Local API Endpoints](#local-api-endpoints)
-- [Data Persistence](#data-persistence)
-- [Recommended Workflow](#recommended-workflow)
-- [Troubleshooting](#troubleshooting)
+- [Installation](#installation)
+- [Running Locally](#running-locally)
+- [Manual Testing](#manual-testing)
+- [Project Structure](#project-structure)
+- [External APIs](#external-apis)
 - [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
+- [Backend Plan](#backend-plan)
+- [Limitations](#limitations)
 
 ---
 
-## Overview
+## Product Overview
 
-Waifu Vault is a unified creative environment for:
+The Vault is designed as a premium, dark, modular dashboard where each area has its own identity but shares a common profile, navigation model and persistence strategy.
 
-- Browsing images, GIFs and videos from multiple image boards and custom scrapers.
-- Exploring galleries, doujins and anime/video sources without leaving the app.
-- Sending images into a Prompt Lab for local AI analysis and Stable Diffusion prompt generation.
-- Converting prompts between checkpoint families such as SDXL, Pony, Illustrious, Animagine, FLUX and Z-Image.
-- Opening ComfyUI inside the app and preparing prompts for local generation.
-- Chatting with a local Ollama model through Vault Chat.
-- Managing favorites, personal collections, prompt history and AI settings.
+Core product pillars:
 
-The interface is built around a premium dark visual system inspired by streaming platforms, booru galleries and local AI workstations: deep black surfaces, violet/cyan accents, subtle red NSFW signals, glass panels, hover overlays and high-density media grids.
-
----
-
-## Core Features
-
-### Premium Home
-
-- Cinematic hero section with immersive background media.
-- Horizontal content rows for latest videos, images, doujins and curated sources.
-- Large 16:9 video cards with duration, views, rating and hover play overlay.
-- Quick filter bar for `All`, `Videos`, `Images`, `Doujin` and `Hentai`.
-- Loading skeletons and responsive layout for desktop and mobile.
-- Discreet `NSFW` seal integrated into the Waifu Vault logo.
-
-### Vault Gallery / Explore APIs
-
-- Unified gallery for image board sources.
-- Large search bar optimized for tag, artist and character queries.
-- Source chips for Waifu.im, Gelbooru, Rule34, Konachan, Yandere and Danbooru.
-- Format filters: `All`, `Images`, `Videos`, `GIFs`.
-- Sort controls: `Newest`, `Trending`, `Most Viewed`, `Rating`.
-- Premium responsive masonry grid.
-- Rich card hover overlay with:
-  - source badge,
-  - rating/NSFW badge,
-  - title/tags,
-  - score,
-  - Prompt Lab action,
-  - Analyze AI action,
-  - Vault Chat action,
-  - ComfyUI action.
-
-### Prompt Lab
-
-Prompt Lab is the structured AI prompt workspace for a selected image.
-
-Features:
-
-- Image preview and source context.
-- SFW/NSFW analysis mode.
-- Ollama model selection.
-- Target checkpoint selection.
-- Checkpoint Prompt Preset selector.
-- Custom instruction field.
-- Structured editable result fields:
-  - description,
-  - style analysis,
-  - character details,
-  - composition,
-  - lighting,
-  - color palette,
-  - background,
-  - mood,
-  - positive prompt,
-  - negative prompt,
-  - booru tags,
-  - recommended aspect ratio,
-  - recommended resolution,
-  - ComfyUI notes,
-  - safety notes.
-- Copy actions for prompt, negative prompt, tags and JSON.
-- Prompt history.
-- Prompt variations.
-- Prompt refinement.
-- Send to ComfyUI.
-- Send to Vault Chat as context.
-
-### Prompt Template Engine
-
-The Prompt Template Engine adapts prompt structure to the selected checkpoint family instead of producing one generic prompt for all models.
-
-Supported presets:
-
-- `sdxl`
-- `pony`
-- `illustrious`
-- `animagine`
-- `flux`
-- `z_image`
-- `z_image_turbo`
-- `anime_generic`
-- `realistic_generic`
-- `custom`
-
-Examples:
-
-- Pony prompts use score/source/rating tags at the beginning.
-- SDXL prompts use hybrid natural language and concise negative prompts.
-- FLUX prompts use clear natural-language descriptions.
-- Z-Image Turbo avoids traditional negative prompts and converts restrictions into positive wording.
-- Illustrious and Animagine prioritize Danbooru-style tags with appropriate quality/rating tags.
-
-### Vault Chat
-
-Vault Chat is a local AI side drawer that can be opened without leaving the current screen.
-
-Features:
-
-- Local Ollama chat integration.
-- Chat modes:
-  - SFW,
-  - NSFW,
-  - Prompt Engineering,
-  - ComfyUI Helper,
-  - Dev,
-  - Free.
-- Model selector.
-- Context attachments:
-  - selected image,
-  - current positive prompt,
-  - current negative prompt,
-  - analysis,
-  - prompt history item.
-- Prompt detection in assistant responses.
-- Actions for generated prompts:
-  - use in Prompt Lab,
-  - copy prompt,
-  - save to history,
-  - send to ComfyUI,
-  - generate variations,
-  - convert to another preset.
-
-### ComfyUI Internal Studio
-
-- Internal ComfyUI route with iframe support.
-- ComfyUI online/offline/busy status.
-- Reload button.
-- External open fallback.
-- Output folder browser.
-- Local image browser for ComfyUI outputs.
-- PNG metadata parsing for ComfyUI prompts.
-- Prompt handoff from Prompt Lab.
-
-### Specialized Media Modules
-
-- NHentai reader.
-- E-Hentai metadata and gallery parser.
-- E-Hentai HTML reader/parser for page thumbnails and image-page resolution.
-- Rule34Video browser and player.
-- HentaiHaven browser.
-- Tag Explorer for artists, characters and metadata.
-- Profile/favorites/collections.
+- **Portal-first navigation**: users start at `/` and choose a Vault.
+- **Global profile**: one account/profile view for libraries, favorites, settings and NSFW access.
+- **Local-first persistence**: collections work through local storage today and are structured for backend migration.
+- **Protected adult area**: Vault NSFW is separate and gated by login, profile permission, adult confirmation and terms acceptance.
+- **API-first Vaults**: RAWG, Scryfall, AniList/Jikan/MangaDex, D&D 5e API and future IGDB integrations live behind modular services.
+- **Future AI workspace**: Vault Forge is reserved for Prompt Lab, Vault Chat, Ollama, ComfyUI and prompt template tooling.
 
 ---
 
-## Screens and Modules
+## Current Status
 
-| Area | Purpose |
-| --- | --- |
-| Home | Premium discovery page with hero and curated sections |
-| Explore APIs / Vault Gallery | Unified media gallery and API exploration |
-| Prompt Lab | Structured image analysis and prompt engineering |
-| Vault Chat | Local assistant for prompt, workflow and development help |
-| ComfyUI Studio | Internal ComfyUI view and local output explorer |
-| Settings | Persistent AI and local integration settings |
-| NHentai | Doujin search and reader |
-| E-Hentai | Gallery metadata, parser and page resolver |
-| Rule34Video | Video search and playback |
-| HentaiHaven | Anime browsing |
-| Tag Explorer | Artist, character and metadata exploration |
-| Profile | Favorites and user collections |
+| Area | Status | Notes |
+| --- | --- | --- |
+| Portal | Active | Registry-driven Vault selection with auth menu and locked NSFW card when logged out. |
+| Global Profile | Beta | Local-first profile summary, global favorites and NSFW settings. |
+| Vault Games | Active | RAWG discovery, search and user library foundation. |
+| Vault TCG | Beta | Scryfall cards, carousel/gallery and deck builder MVP. |
+| Vault Manga / Anime | Active | AniList/Jikan-oriented discovery and library foundation. |
+| Vault D&D / RPG | Beta | D&D 5e API sections and local character/campaign storage. |
+| Vault Forge / Prompt Lab | Planned | Route and product shell are ready; AI implementation is future work. |
+| Vault NSFW | Active | Existing internal area preserved, with updated branding and profile-based gate. |
+| Backend | Planned | Fastify/Prisma/PostgreSQL/Redis not implemented yet. |
 
 ---
 
-## Local AI and ComfyUI
+## Vaults
 
-Waifu Vault is designed for constrained local hardware, including machines with 16 GB RAM and an RTX 4060.
+### Vault Games
 
-Important runtime rules implemented in the architecture:
+Route: `/games`
 
-- ComfyUI has GPU priority.
-- Ollama tasks are sequential.
-- The app should not run ComfyUI generation and Ollama image/chat tasks simultaneously.
-- Low Memory Mode is enabled by default in AI settings.
-- Ollama model keep-alive values are intentionally short.
-- Base64 image buffers are temporary and should not be stored in prompt/chat history.
-- History stores URLs, IDs, thumbnails and text analysis only.
+Purpose:
 
-### Recommended Local Models
+- Discover games using RAWG.
+- Track backlog, wishlist, playing, finished, completed and platinum status.
+- Save games into a personal library.
+- Prepare for IGDB through a backend bridge.
 
-The app can use any installed Ollama model, but the current defaults and common options are:
+Current capabilities:
+
+- Popular games.
+- Recently released and trending sections.
+- Game search.
+- Game details modal.
+- Local user game library.
+
+### Vault TCG
+
+Route: `/tcg`
+
+Purpose:
+
+- Search and browse trading cards.
+- Build decks.
+- Validate basic deck rules.
+- Prepare for Scryfall, APITCG and future Pokémon TCG support.
+
+Current capabilities:
+
+- Scryfall card loading.
+- Card carousel/gallery.
+- Left deck builder sidebar on desktop.
+- Deck persistence by user.
+- Basic deck rule registry and validation.
+
+### Vault Manga / Anime
+
+Route: `/manga`
+
+Purpose:
+
+- Discover manga/anime metadata.
+- Browse covers.
+- Save reading list and favorites.
+- Prepare for safe reading routes when sources allow it.
+
+Current capabilities:
+
+- Cover-first discovery.
+- Search/library foundation.
+- User manga library statuses.
+- Safe-source policy in architecture.
+
+### Vault D&D / RPG
+
+Route: `/rpg`
+
+Purpose:
+
+- Build characters.
+- Create campaigns.
+- Browse classes, races, spells, monsters, equipment and rules from the D&D 5e API.
+- Prepare future local AI Dungeon Master flows.
+
+Current capabilities:
+
+- D&D 5e service layer.
+- Character builder MVP.
+- Campaign creator MVP.
+- Spellbook, bestiary and equipment sections.
+
+### Vault Forge / Prompt Lab
+
+Route: `/forge`
+
+Purpose:
+
+- Centralize Prompt Lab, Vault Chat, ComfyUI and Ollama workflows.
+- Save prompt history.
+- Convert prompts across model families.
+- Manage local performance constraints.
+
+Current status:
+
+- Product shell and route exist.
+- AI execution is planned for a later phase.
+
+Planned prompt presets:
+
+- SDXL
+- Pony
+- Illustrious
+- Animagine
+- FLUX
+- Z-Image
+- Z-Image Turbo
+- Anime Generic
+- Realistic Generic
+- Custom
+
+### Vault NSFW
+
+Route: `/nsfw`
+
+Purpose:
+
+- Preserve the existing adult Vault experience.
+- Keep adult content isolated from SFW Vaults.
+- Enforce login, profile permission, +18 confirmation and terms acceptance.
+
+Access rules:
+
+- User must be logged in.
+- User must enable Vault NSFW access in the profile.
+- User must confirm being 18+.
+- User must accept Terms of Use and Privacy Policy.
+- Acceptance is persisted using the current terms version.
+
+---
+
+## Architecture
+
+The app currently runs as a frontend-first Vite application with modular areas:
+
+- `areas/portal` for the main product portal.
+- `areas/profile` for the global user profile.
+- `areas/games` for RAWG/game library features.
+- `areas/tcg` for Scryfall/deck builder features.
+- `areas/manga` for manga/anime discovery.
+- `areas/rpg` for D&D/RPG tools.
+- `areas/forge` for future AI creative workflows.
+- `features/nsfwGate` for NSFW access control.
+- `shared` for common UI, auth menu and storage utilities.
+- `services` for global services such as user profile persistence.
+- `data/vaultRegistry.ts` for centralized Vault metadata.
+
+The repository has not yet been moved into a monorepo layout. The planned future layout is:
+
+```txt
+apps/
+  web/      React + Vite + TailwindCSS
+  api/      Fastify + Prisma + Redis
+
+packages/
+  types/
+  validators/
+  config/
+```
+
+---
+
+## Security Model
+
+### Secrets
+
+- Never hardcode API keys or secrets.
+- Never commit `.env` or `.env.local`.
+- `IGDB_CLIENT_SECRET` must only exist server-side.
+- `RAWG_API_KEY` should preferably be proxied through the backend in production.
+- Frontend-only RAWG usage may use `VITE_RAWG_API_KEY` for local development.
+
+### NSFW
+
+Vault NSFW is protected at the entry point and direct URL access:
+
+```ts
+isAuthenticated &&
+settings.nsfwAccessEnabled &&
+settings.nsfwTermsAccepted &&
+settings.nsfwTermsVersion === CURRENT_NSFW_TERMS_VERSION
+```
+
+Current terms version:
+
+```ts
+CURRENT_NSFW_TERMS_VERSION = "1.0"
+```
+
+### External APIs
+
+- Respect API rate limits.
+- Use debounce and cache where possible.
+- Do not bypass Cloudflare.
+- Do not bypass paywalls.
+- Do not implement aggressive scraping.
+- Manga reader features must use only permitted APIs/sources.
+
+---
+
+## Environment Variables
+
+Create `.env.local` for local frontend variables and keep it out of git.
 
 ```bash
-ollama run gemma4:e4b
-ollama run dolphin3
-ollama run dolphin-mistral
-ollama run qwen3-vl:4b
+VITE_RAWG_API_KEY=
+VITE_IGDB_CLIENT_ID=
+VITE_API_URL=http://localhost:3333
 ```
 
-For image analysis, use a model that actually supports vision. Text-only models may return weak or malformed visual analysis.
+Future backend variables:
 
----
-
-## Supported Sources
-
-### Image APIs
-
-- Waifu.im
-- Gelbooru
-- Rule34
-- Konachan
-- Yandere
-- Danbooru
-- Local ComfyUI outputs
-
-### Video and Gallery Sources
-
-- Rule34Video
-- HentaiHaven
-- NHentai
-- E-Hentai
-- ExHentai support is partially available through cookies where applicable.
-
-### Notes
-
-Many public sources have CORS, hotlinking, Cloudflare or rate-limit restrictions. The app uses local Vite middleware and proxy endpoints to improve compatibility, but source behavior can change without notice.
-
----
-
-## Tech Stack
-
-- React 19
-- TypeScript 5
-- Vite 6
-- Tailwind CDN runtime configuration
-- Cheerio for HTML parsing
-- Vite middleware plugins for local APIs and proxies
-- Prisma dependency for local account/favorites infrastructure
-- Ollama local API
-- ComfyUI local API / iframe integration
-
----
-
-## Project Structure
-
-```text
-.
-├── App.tsx
-├── index.tsx
-├── index.html
-├── vite.config.ts
-├── constants.ts
-├── types.ts
-├── comfyui-plugin.ts
-├── ehentai-plugin.ts
-├── hh-plugin.ts
-├── nhentai-plugin.ts
-├── r34video-plugin.ts
-├── prisma-plugin.ts
-├── components/
-│   ├── AI/
-│   ├── PromptLab/
-│   ├── VaultChat/
-│   ├── HomeView.tsx
-│   ├── ImageCard.tsx
-│   ├── ImageGrid.tsx
-│   ├── ImageModal.tsx
-│   ├── Sidebar.tsx
-│   ├── ComfyUIView.tsx
-│   ├── EHentaiView.tsx
-│   ├── NHentaiView.tsx
-│   ├── R34VideoView.tsx
-│   └── SettingsView.tsx
-├── context/
-│   ├── AuthContext.tsx
-│   └── ThemeContext.tsx
-├── services/
-│   ├── LocalAIExecutionManager.ts
-│   ├── imageService.ts
-│   ├── ollamaService.ts
-│   ├── ollamaChatService.ts
-│   ├── comfyuiService.ts
-│   ├── settingsService.ts
-│   ├── promptHistoryService.ts
-│   ├── promptTemplateEngine.ts
-│   ├── promptTemplateRegistry.ts
-│   ├── ehentai/
-│   ├── hentaihaven/
-│   └── rule34video/
-├── types/
-│   └── ai.types.ts
-├── prisma/
-│   └── schema.prisma
-└── public/
+```bash
+DATABASE_URL=
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
+REDIS_URL=
+RAWG_API_KEY=
+IGDB_CLIENT_SECRET=
+JWT_SECRET=
+CORS_ORIGIN=http://localhost:3000
 ```
 
----
-
-## Requirements
-
-### Required
-
-- Node.js 18 or newer
-- npm
-- Modern Chromium-based browser recommended
-
-### Optional
-
-- Ollama for local AI features
-- ComfyUI for local generation workflow
-- NVIDIA GPU for ComfyUI generation
-- Installed Ollama vision model for image analysis
+An `.env.example` should be added when the backend phase starts.
 
 ---
 
 ## Installation
 
 ```bash
-git clone https://github.com/raphawestim/Waifu_valt_Project.git
-cd Waifu_valt_Project
 npm install
 ```
 
 ---
 
-## Environment Variables
-
-Create a `.env.local` file in the project root if you need optional keys:
-
-```env
-GEMINI_API_KEY=
-NHENTAI_API_KEY=
-```
-
-Current notes:
-
-- E-Hentai API does not require an API key.
-- Ollama runs locally and does not require a key.
-- ComfyUI runs locally and does not require a key.
-- Some scrapers may rely on local proxy middleware instead of direct browser requests.
-
----
-
-## Running the App
+## Running Locally
 
 Development server:
 
 ```bash
 npm run dev
-```
-
-Default Vite server:
-
-```text
-http://localhost:3000
 ```
 
 Production build:
@@ -398,7 +312,7 @@ Production build:
 npm run build
 ```
 
-Preview production build:
+Preview build:
 
 ```bash
 npm run preview
@@ -406,240 +320,247 @@ npm run preview
 
 ---
 
-## Configuration Notes
+## Manual Testing
 
-### ComfyUI Paths
+### Portal and navigation
 
-The ComfyUI plugin currently contains local Windows paths:
+1. Open `/`.
+2. Confirm the portal shows:
+   - Vault Games
+   - Vault TCG
+   - Vault Manga / Anime
+   - Vault D&D / RPG
+   - Vault Forge / Prompt Lab
+   - Vault NSFW
+3. Click each SFW Vault and confirm the route changes correctly.
+4. Confirm each Vault has a Back to Main Menu button.
 
-```ts
-const COMFYUI_OUTPUT_DIR = 'C:/Users/Raphael/Documents/ComfyUI/ComfyUI/output';
-const COMFYUI_BAT_PATH = 'C:\\Users\\Raphael\\Documents\\ComfyUI\\run_nvidia_gpu.bat';
-```
+### Auth and profile
 
-If you run the app on another machine, update these values in:
+1. Open `/login` or `/register`.
+2. Enter a local username.
+3. Confirm `/profile` opens.
+4. Confirm the profile shows Vault summaries, global favorites and NSFW settings.
 
-```text
-comfyui-plugin.ts
-```
+### NSFW access
 
-The default ComfyUI URL used by the app settings is:
+1. Log out.
+2. Open `/`.
+3. Confirm Vault NSFW appears locked and cannot be clicked.
+4. Open `/nsfw` directly.
+5. Confirm the app returns to the portal and shows the access modal.
+6. Log in.
+7. Open `/profile`.
+8. Enable Vault NSFW access and accept +18/terms.
+9. Open `/nsfw` again.
+10. Confirm it enters without repeating the warning.
+11. Disable NSFW access in profile.
+12. Confirm `/nsfw` is blocked again.
 
-```text
-http://127.0.0.1:8188
-```
+### Branding
 
-### Ollama URL
-
-Default Ollama URL:
-
-```text
-http://localhost:11434
-```
-
-This can be changed in the app settings.
-
-### AI Settings Persistence
-
-AI settings are stored in localStorage under:
-
-```text
-wv_ai_settings
-```
-
-Prompt history:
-
-```text
-wv_prompt_history
-```
-
-Chat sessions:
-
-```text
-wv_chat_sessions
-```
-
----
-
-## Local API Endpoints
-
-The Vite development server exposes local middleware endpoints used by the frontend.
-
-### Generic Media/JSON Proxy
-
-```text
-GET /api/proxy-json?url=...
-GET /api/proxy-image?url=...
-```
-
-Used to bypass browser CORS/hotlinking restrictions for supported sources.
-
-### Ollama
-
-```text
-GET  /api/ollama/health
-GET  /api/ollama/models
-POST /api/ollama/chat
-POST /api/ollama/analyze-image
-POST /api/ollama/unload
-```
-
-### ComfyUI
-
-```text
-GET  /api/comfyui/status
-GET  /api/comfyui/folders
-GET  /api/comfyui/images
-POST /api/comfyui/start
-POST /api/comfyui/prompt
-```
-
-### E-Hentai
-
-```text
-POST /api/ehentai/gdata
-POST /api/ehentai/parse-gallery
-POST /api/ehentai/resolve-image-page
-```
-
-### NHentai
-
-```text
-GET /api/nhentai/...
-```
-
-### Rule34Video
-
-```text
-GET /api/r34video/latest
-GET /api/r34video/search
-GET /api/r34video/details
-```
-
-### HentaiHaven
-
-```text
-GET /api/hh/latest
-GET /api/hh/search
-GET /api/hh/genre
-GET /api/hh/episodes
-```
-
----
-
-## Data Persistence
-
-Most user-facing data is persisted locally:
-
-- Favorites and lists: auth/profile context and local app storage.
-- AI settings: localStorage.
-- Prompt history: localStorage.
-- Chat sessions: localStorage.
-- ComfyUI images: read from the configured local ComfyUI output directory.
-
-The app avoids storing large image base64 buffers in history.
-
----
-
-## Recommended Workflow
-
-1. Start ComfyUI if you want generation support.
-2. Start Ollama if you want Prompt Lab or Vault Chat.
-3. Open Waifu Vault with `npm run dev`.
-4. Browse Home or Explore APIs.
-5. Open an image in Prompt Lab.
-6. Select the mode and checkpoint preset.
-7. Generate or refine a prompt.
-8. Send the prompt to ComfyUI or Vault Chat.
-9. Save useful outputs to prompt history.
-
----
-
-## Troubleshooting
-
-### Ollama model is reported as not installed
-
-Check installed models:
+Search visible UI/code for old names:
 
 ```bash
-ollama list
+rg "WaifuVault|Waifu Vault|Waifu Valt|The Valt|Vault Gallery|No Waifus|WaifuLover"
 ```
 
-Install or run a model:
+The main UI should use **The Vault**, **Vault NSFW** or **The Vault NSFW**.
 
-```bash
-ollama run qwen3-vl:4b
+---
+
+## Project Structure
+
+Current relevant structure:
+
+```txt
+.
+├─ App.tsx
+├─ areas/
+│  ├─ auth/
+│  ├─ forge/
+│  ├─ games/
+│  ├─ manga/
+│  ├─ portal/
+│  ├─ profile/
+│  ├─ rpg/
+│  └─ tcg/
+├─ components/
+├─ data/
+│  └─ vaultRegistry.ts
+├─ docs/
+│  └─ screenshots/
+├─ features/
+│  └─ nsfwGate/
+├─ services/
+│  └─ userProfileService.ts
+├─ shared/
+│  ├─ auth/
+│  ├─ components/
+│  └─ storage/
+├─ types/
+└─ vite.config.ts
 ```
 
-If a selected model fails, the app may try the configured fallback model.
+---
 
-### Image analysis is poor
+## External APIs
 
-Common causes:
-
-- The selected model is text-only.
-- The model has weak vision support.
-- The image could not be converted to base64 due to CORS/hotlink restrictions.
-- The response JSON from the model was malformed.
-
-Use a vision-capable model such as `qwen3-vl:4b` or another local multimodal model available in Ollama.
-
-### ComfyUI iframe does not load
-
-Some ComfyUI setups may block iframe embedding through response headers or browser policy. Use the external open button as a fallback.
-
-### External images fail to load
-
-Some hosts block hotlinking. The app attempts to route media through `/api/proxy-image`, but not every remote host is guaranteed to allow retrieval.
-
-### E-Hentai pages do not resolve final images
-
-E-Hentai gallery pages and image pages can require cookies, rate limiting or specific access conditions. For ExHentai, login cookies are required.
-
-### Build errors after changing paths
-
-Check that local Windows paths in `comfyui-plugin.ts` are valid and properly escaped.
+| API | Vault | Status | Notes |
+| --- | --- | --- | --- |
+| RAWG | Games | Active | Uses `VITE_RAWG_API_KEY` in frontend until backend proxy exists. |
+| IGDB | Games | Planned | Requires backend bridge; never expose client secret in frontend. |
+| Scryfall | TCG | Active | Used for Magic card search/gallery/deck builder. |
+| APITCG | TCG | Planned | Future multi-TCG adapter. |
+| AniList | Manga / Anime | Active/Beta | Metadata and cover discovery. |
+| Jikan | Manga / Anime | Beta | Metadata fallback/search. |
+| MangaDex | Manga / Anime | Planned/Beta | Use carefully, respect API rules. |
+| Kitsu | Manga / Anime | Planned | Future metadata source. |
+| D&D 5e API | RPG | Active/Beta | Classes, races, spells, monsters and equipment. |
+| Ollama | Forge | Planned | Local AI chat/prompt generation. |
+| ComfyUI | Forge | Planned | Local generation/workflow UI. |
 
 ---
 
 ## Roadmap
 
-Potential next improvements:
+### Phase 1 - Organization, Branding and Navigation
 
-- True infinite scroll in Vault Gallery.
-- More robust per-source sorting support.
-- User-editable custom checkpoint presets UI.
-- IndexedDB migration for large prompt/chat histories.
-- ComfyUI workflow JSON injection.
-- Better source availability diagnostics.
-- More local model presets and vision model recommendations.
-- Optional backend mode for production deployment.
+- [x] Rename visible product identity to The Vault.
+- [x] Create portal with modular Vault cards.
+- [x] Add centralized `vaultRegistry`.
+- [x] Add Back to Main Menu button.
+- [x] Add Vault Forge route shell.
+
+### Phase 2 - Global Profile, Login and NSFW Control
+
+- [x] Add login/register MVP.
+- [x] Add global profile page.
+- [x] Add global user settings.
+- [x] Add NSFW profile settings.
+- [x] Protect Vault NSFW with profile-based access control.
+- [x] Add global favorites foundation.
+
+### Phase 3 - Vault Games with RAWG
+
+- [x] Add RAWG service and discovery UI.
+- [x] Add user game library foundation.
+- [x] Add game status selector and details modal.
+- [ ] Move RAWG key usage behind backend proxy.
+- [ ] Add IGDB backend bridge.
+
+### Phase 4 - Vault TCG with Scryfall
+
+- [x] Add Scryfall card loading.
+- [x] Add card carousel/gallery.
+- [x] Add deck builder MVP.
+- [x] Add deck rules registry.
+- [ ] Add dedicated deck list/detail pages.
+- [ ] Add advanced filters and pagination.
+
+### Phase 5 - Vault Manga / Anime
+
+- [x] Add cover-first manga/anime home.
+- [x] Add library status model.
+- [x] Add AniList/Jikan-oriented search foundation.
+- [ ] Add dedicated title details route.
+- [ ] Add safe reader flow for permitted sources.
+
+### Phase 6 - Vault D&D / RPG
+
+- [x] Add D&D 5e API service.
+- [x] Add character builder MVP.
+- [x] Add campaign creator MVP.
+- [x] Add spellbook/bestiary/equipment sections.
+- [ ] Add detail pages for characters and campaigns.
+
+### Phase 7 - Docker, Backend and Database
+
+- [ ] Add Docker Compose for PostgreSQL, Redis and Adminer.
+- [ ] Add Fastify API in `apps/api`.
+- [ ] Add Prisma schema and migrations.
+- [ ] Add auth endpoints.
+- [ ] Add profile/library/favorites endpoints.
+
+### Phase 8 - Real User Persistence
+
+- [ ] Add API client with online/offline backend detection.
+- [ ] Sync local collections to backend.
+- [ ] Keep local fallback when backend is unavailable.
+
+### Phase 9 - Vault Forge / AI
+
+- [ ] Implement Prompt Lab route.
+- [ ] Implement Vault Chat route.
+- [ ] Add Ollama service.
+- [ ] Add ComfyUI status/iframe integration.
+- [ ] Add performance manager for RAM/VRAM protection.
+- [ ] Add prompt template engine.
+
+### Phase 10 - Markdown, Tags, Search and Command Palette
+
+- [ ] Add Markdown document model.
+- [ ] Add safe Markdown preview.
+- [ ] Add universal tags.
+- [ ] Add global search.
+- [ ] Add command palette with `Ctrl + K`.
 
 ---
 
-## Contributing
+## Backend Plan
 
-Contributions are welcome. Good areas to improve:
+The future backend will use:
 
-- New source adapters.
-- Parser reliability.
-- UI polish and responsive behavior.
-- Prompt Template Engine presets.
-- ComfyUI workflow integration.
-- Local AI memory management.
-- Test coverage.
+- Fastify
+- TypeScript
+- Prisma
+- PostgreSQL
+- Redis
+- Zod
+- JWT or httpOnly cookie auth
+- Docker Compose for local infrastructure
 
-Before submitting changes:
+Initial services:
 
-```bash
-npm run build
-```
+- `postgres`
+- `redis`
+- `adminer`
 
-Keep changes modular and avoid breaking existing sources or local workflows.
+Initial API routes:
+
+- `GET /health`
+- `POST /auth/login`
+- `POST /auth/register`
+- `GET /auth/me`
+- `GET /users/me`
+- `PATCH /users/me/settings`
+- `GET /me/games`
+- `POST /me/games`
+- `GET /me/decks`
+- `POST /me/decks`
+- `GET /me/manga`
+- `POST /me/manga`
+- `GET /me/rpg/characters`
+- `POST /me/rpg/characters`
+- `GET /me/favorites`
+- `POST /me/favorites`
+- `GET /me/nsfw-consent`
+- `POST /me/nsfw-consent`
+
+---
+
+## Limitations
+
+- Auth is currently MVP/local-first, not production authentication.
+- Backend, PostgreSQL, Redis and Prisma are not implemented yet.
+- Some user collections still rely on local storage.
+- Vault Forge is a planned shell, not an operational AI workspace yet.
+- IGDB must wait for a backend bridge because its client secret must never reach the frontend.
+- RAWG may still use a frontend `VITE_RAWG_API_KEY` in local development.
+- The NSFW internal area is intentionally preserved to avoid breaking existing behavior.
 
 ---
 
 ## License
 
-This project is intended as a personal/local creative tool. Check the repository license before redistribution or commercial use.
-
+License has not been finalized yet. Add a license before public distribution.
