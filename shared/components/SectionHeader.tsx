@@ -4,7 +4,7 @@ interface SectionHeaderProps {
   eyebrow: string;
   title: string;
   description?: string;
-  tone?: 'cyan' | 'fuchsia' | 'emerald' | 'rose';
+  tone?: 'cyan' | 'fuchsia' | 'emerald' | 'rose' | 'amber' | 'violet';
   action?: React.ReactNode;
 }
 
@@ -13,6 +13,8 @@ const toneClasses: Record<NonNullable<SectionHeaderProps['tone']>, string> = {
   fuchsia: 'text-fuchsia-200',
   emerald: 'text-emerald-200',
   rose: 'text-rose-200',
+  amber: 'text-amber-200',
+  violet: 'text-violet-200',
 };
 
 export const SectionHeader: React.FC<SectionHeaderProps> = ({

@@ -1,11 +1,10 @@
 import React from 'react';
-import type { MangaAnimeSearchResult } from '../types/manga.types';
-import type { MangaLibraryStatus } from '../../../shared/storage/userCollectionsService';
+import type { MangaMediaItem, UserMangaStatus } from '../types/manga.types';
 
 interface AddToMangaLibraryButtonProps {
-  item: MangaAnimeSearchResult;
-  status: MangaLibraryStatus;
-  onAdd: (item: MangaAnimeSearchResult, status: MangaLibraryStatus) => void;
+  item: MangaMediaItem;
+  status: UserMangaStatus;
+  onAdd: (item: MangaMediaItem, status: UserMangaStatus) => void;
 }
 
 export const AddToMangaLibraryButton: React.FC<AddToMangaLibraryButtonProps> = ({ item, status, onAdd }) => (

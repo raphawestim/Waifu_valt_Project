@@ -28,6 +28,9 @@ The project started as a single adult media workspace and is being refactored in
 - [Environment Variables](#environment-variables)
 - [Installation](#installation)
 - [Running Locally](#running-locally)
+- [Local Infrastructure with Docker](#local-infrastructure-with-docker)
+- [Backend API](#backend-api)
+- [Performance](#performance)
 - [Manual Testing](#manual-testing)
 - [Project Structure](#project-structure)
 - [External APIs](#external-apis)
@@ -56,15 +59,18 @@ Core product pillars:
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Portal | Active | Registry-driven Vault selection with auth menu and locked NSFW card when logged out. |
-| Global Profile | Beta | Local-first profile summary, global favorites and NSFW settings. |
-| Vault Games | Active | RAWG discovery, search and user library foundation. |
-| Vault TCG | Beta | Scryfall cards, carousel/gallery and deck builder MVP. |
-| Vault Manga / Anime | Active | AniList/Jikan-oriented discovery and library foundation. |
-| Vault D&D / RPG | Beta | D&D 5e API sections and local character/campaign storage. |
+| Portal | Active | Registry-driven Vault selection with auth menu and NSFW state synced to profile permissions. |
+| Auth MVP | Beta | Uses the Fastify backend when available, keeps the local/mock fallback when offline. |
+| Global Profile | Beta | Profile, settings, NSFW access and global favorites prefer backend data with local fallback. |
+| Vault Games | Active | RAWG discovery, backend/local library, Steam enhancement, SteamGridDB artwork metadata and global favorites. |
+| Vault TCG | Beta | Scryfall cards, carousel/gallery, deck builder MVP and backend/local deck storage. |
+| Vault Manga / Anime | Active | AniList/Jikan discovery, backend/local library, statuses, favorites and reading progress foundation. |
+| Vault D&D / RPG | Beta | D&D 5e API sections plus backend/local characters, campaigns and sessions. |
 | Vault Forge / Prompt Lab | Planned | Route and product shell are ready; AI implementation is future work. |
 | Vault NSFW | Active | Existing internal area preserved, with updated branding and profile-based gate. |
-| Backend | Planned | Fastify/Prisma/PostgreSQL/Redis not implemented yet. |
+| Local Infrastructure | Active | Docker Compose provides PostgreSQL, Redis and Adminer for the upcoming backend phase. |
+| Backend | Beta | Fastify API, Prisma, JWT auth, protected collection endpoints, external API proxies and Redis cache. |
+| Frontend Performance | Active | Route-level lazy loading and Vite manual chunks split Vaults into separate bundles. |
 
 ---
 
@@ -87,7 +93,10 @@ Current capabilities:
 - Recently released and trending sections.
 - Game search.
 - Game details modal.
-- Local user game library.
+- Backend/local hybrid user game library.
+- Status tracking, notes and favorite sync to the global profile.
+- Optional Steam app linking through the backend.
+- Optional SteamGridDB artwork selection stored as metadata URLs.
 
 ### Vault TCG
 
@@ -105,7 +114,7 @@ Current capabilities:
 - Scryfall card loading.
 - Card carousel/gallery.
 - Left deck builder sidebar on desktop.
-- Deck persistence by user.
+- Backend/local hybrid deck persistence by user.
 - Basic deck rule registry and validation.
 
 ### Vault Manga / Anime
@@ -123,7 +132,7 @@ Current capabilities:
 
 - Cover-first discovery.
 - Search/library foundation.
-- User manga library statuses.
+- Backend/local hybrid user manga library statuses and progress.
 - Safe-source policy in architecture.
 
 ### Vault D&D / RPG
@@ -142,6 +151,7 @@ Current capabilities:
 - D&D 5e service layer.
 - Character builder MVP.
 - Campaign creator MVP.
+- Backend/local hybrid characters, campaigns and sessions.
 - Spellbook, bestiary and equipment sections.
 
 ### Vault Forge / Prompt Lab
@@ -264,29 +274,27 @@ CURRENT_NSFW_TERMS_VERSION = "1.0"
 
 ## Environment Variables
 
-Create `.env.local` for local frontend variables and keep it out of git.
+Create `.env.local` or `.env` for local variables and keep real secrets out of git. Use `.env.example` as the safe template.
 
 ```bash
+POSTGRES_USER=thevault
+POSTGRES_PASSWORD=thevault_password
+POSTGRES_DB=thevault_db
+DATABASE_URL=postgresql://thevault:thevault_password@localhost:5432/thevault_db
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=change_me
+CORS_ORIGIN=http://localhost:3000
+
 VITE_RAWG_API_KEY=
+RAWG_API_KEY=
 VITE_IGDB_CLIENT_ID=
+IGDB_CLIENT_SECRET=
+STEAMGRIDDB_API_KEY=
+STEAM_API_KEY=
 VITE_API_URL=http://localhost:3333
 ```
 
-Future backend variables:
-
-```bash
-DATABASE_URL=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-POSTGRES_DB=
-REDIS_URL=
-RAWG_API_KEY=
-IGDB_CLIENT_SECRET=
-JWT_SECRET=
-CORS_ORIGIN=http://localhost:3000
-```
-
-An `.env.example` should be added when the backend phase starts.
+Do not commit `.env`, `.env.local` or `.env.*.local`.
 
 ---
 
@@ -320,6 +328,118 @@ npm run preview
 
 ---
 
+## Local Infrastructure with Docker
+
+Docker is currently used only for local infrastructure. The React/Vite frontend and Fastify backend still run locally.
+
+Services:
+
+- PostgreSQL 16 on `localhost:5432`
+- Redis 7 on `localhost:6379`
+- Adminer on `http://localhost:8080`
+
+Quick start:
+
+```bash
+docker compose up -d
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+See the full guide in [docs/docker.md](docs/docker.md).
+
+Next planned infrastructure step: gradual frontend migration from local storage to the Fastify API.
+
+---
+
+## Backend API
+
+The first real backend lives in `apps/api` and uses Fastify, Prisma, PostgreSQL, Redis, Zod, JWT and bcryptjs.
+
+Backend guide:
+
+- [docs/backend.md](docs/backend.md)
+
+Common commands:
+
+```bash
+docker compose up -d
+npm run prisma:generate
+npm run prisma:migrate
+npm run api:dev
+```
+
+API URL:
+
+```text
+http://localhost:3333
+```
+
+Health check:
+
+```text
+GET /health
+```
+
+Implemented endpoint groups:
+
+- Auth: `/auth/register`, `/auth/login`, `/auth/me`
+- Profile/settings/NSFW: `/users/me`, `/users/me/settings`, `/users/me/nsfw`
+- Favorites: `/me/favorites`
+- Games: `/me/games`
+- TCG decks/cards: `/me/decks`
+- Manga / Anime library: `/me/manga`
+- RPG characters, campaigns and sessions: `/me/rpg/...`
+- External API proxies/cache: `/external/rawg/...`, `/external/steam/...`, `/external/steamgriddb/...`, `/external/scryfall/...`, `/external/anilist/...`, `/external/jikan/...`, `/external/dnd5e/...`
+
+The frontend now uses the backend for Auth, Profile, User Settings, NSFW access, Global Favorites and migrated Vault libraries when the API is reachable. Local storage remains as the offline fallback.
+
+Frontend backend state:
+
+- Token key: `thevault.auth.token`
+- Session key: `thevault.auth.session`
+- Legacy session key still supported: `waifu-vault-user`
+- Backend health: `GET /health`
+- Cache health: `GET /health/cache`
+
+External proxy examples:
+
+```text
+GET http://localhost:3333/external/rawg/games/popular
+GET http://localhost:3333/external/steam/search?q=elden%20ring
+GET http://localhost:3333/external/steamgriddb/search?q=elden%20ring
+GET http://localhost:3333/external/scryfall/cards/search?q=sol%20ring
+GET http://localhost:3333/external/dnd5e/classes
+GET http://localhost:3333/external/anilist/search?q=Berserk&type=MANGA
+```
+
+RAWG should use `RAWG_API_KEY` in the backend. `VITE_RAWG_API_KEY` remains a development fallback only.
+
+---
+
+## Performance
+
+The frontend uses route-level code splitting to keep the portal and initial shell light.
+
+Current split strategy:
+
+- Main Vault routes are loaded with `React.lazy` and `Suspense`.
+- `RouteLoadingState` provides a dark premium loading state instead of a blank screen.
+- Vite `manualChunks` separates `vendor-react`, `portal`, `profile`, `vault-games`, `vault-tcg`, `vault-manga`, `vault-rpg`, `vault-forge`, `nsfw-gate`, `nsfw-media` and `ai-tools`.
+- Heavy NSFW modals and media views mount only when needed.
+
+Latest build result:
+
+- Main app chunk: about 51 kB.
+- Largest isolated chunk: `vendor-react`, about 190 kB.
+- The previous Vite warning for chunks larger than 500 kB has been removed without raising the warning limit.
+
+---
+
 ## Manual Testing
 
 ### Portal and navigation
@@ -341,6 +461,8 @@ npm run preview
 2. Enter a local username.
 3. Confirm `/profile` opens.
 4. Confirm the profile shows Vault summaries, global favorites and NSFW settings.
+5. Reload the browser and confirm the session persists.
+6. Use Logout from the portal/profile and confirm Login/Register return.
 
 ### NSFW access
 
@@ -408,15 +530,17 @@ Current relevant structure:
 
 | API | Vault | Status | Notes |
 | --- | --- | --- | --- |
-| RAWG | Games | Active | Uses `VITE_RAWG_API_KEY` in frontend until backend proxy exists. |
+| RAWG | Games | Active | Prefer backend proxy with `RAWG_API_KEY`; `VITE_RAWG_API_KEY` remains a dev fallback. |
+| Steam Store API | Games | Beta | Backend proxy for app search/details/store URLs; no SteamDB scraping. |
+| SteamGridDB | Games | Beta | Backend-only `STEAMGRIDDB_API_KEY`; artwork URLs saved in game metadata. |
 | IGDB | Games | Planned | Requires backend bridge; never expose client secret in frontend. |
-| Scryfall | TCG | Active | Used for Magic card search/gallery/deck builder. |
+| Scryfall | TCG | Active | Backend proxy + Redis cache, with direct frontend fallback. |
 | APITCG | TCG | Planned | Future multi-TCG adapter. |
-| AniList | Manga / Anime | Active/Beta | Metadata and cover discovery. |
-| Jikan | Manga / Anime | Beta | Metadata fallback/search. |
+| AniList | Manga / Anime | Active/Beta | Backend proxy + Redis cache, with direct frontend fallback. |
+| Jikan | Manga / Anime | Beta | Backend proxy + Redis cache, with direct frontend fallback. |
 | MangaDex | Manga / Anime | Planned/Beta | Use carefully, respect API rules. |
 | Kitsu | Manga / Anime | Planned | Future metadata source. |
-| D&D 5e API | RPG | Active/Beta | Classes, races, spells, monsters and equipment. |
+| D&D 5e API | RPG | Active/Beta | Backend proxy + Redis cache, with direct frontend fallback. |
 | Ollama | Forge | Planned | Local AI chat/prompt generation. |
 | ComfyUI | Forge | Planned | Local generation/workflow UI. |
 
@@ -440,29 +564,45 @@ Current relevant structure:
 - [x] Add NSFW profile settings.
 - [x] Protect Vault NSFW with profile-based access control.
 - [x] Add global favorites foundation.
+- [x] Add local auth/session keys prepared for backend migration.
+- [x] Add privacy mode and hide-NSFW portal setting.
 
 ### Phase 3 - Vault Games with RAWG
 
 - [x] Add RAWG service and discovery UI.
 - [x] Add user game library foundation.
 - [x] Add game status selector and details modal.
-- [ ] Move RAWG key usage behind backend proxy.
+- [x] Add debounced RAWG search.
+- [x] Add dedicated local `thevault.userGames` storage.
+- [x] Sync favorited games into global favorites.
+- [x] Add RAWG API key fallback state and `.env.example`.
+- [x] Move RAWG key usage behind backend proxy with frontend dev fallback.
 - [ ] Add IGDB backend bridge.
 
 ### Phase 4 - Vault TCG with Scryfall
 
 - [x] Add Scryfall card loading.
 - [x] Add card carousel/gallery.
-- [x] Add deck builder MVP.
+- [x] Add searchable card gallery with basic Scryfall filters.
+- [x] Add deck builder MVP with active deck sidebar.
 - [x] Add deck rules registry.
+- [x] Add local deck storage in `thevault.userDecks:{userId}`.
+- [x] Sync favorited cards and decks into global favorites.
+- [x] Add card details modal and load-more pagination.
 - [ ] Add dedicated deck list/detail pages.
-- [ ] Add advanced filters and pagination.
+- [ ] Add advanced deck editor routes and mobile drawer polish.
 
 ### Phase 5 - Vault Manga / Anime
 
 - [x] Add cover-first manga/anime home.
 - [x] Add library status model.
-- [x] Add AniList/Jikan-oriented search foundation.
+- [x] Add AniList GraphQL search/trending/details foundation.
+- [x] Add Jikan REST search/top/details foundation.
+- [x] Add MangaDex metadata/chapter discovery adapter.
+- [x] Add local manga/anime storage in `thevault.userManga:{userId}`.
+- [x] Sync favorite manga/anime into global favorites.
+- [x] Add details modal with status, notes and reading progress.
+- [x] Add library filters for status, type, source, favorites and local search.
 - [ ] Add dedicated title details route.
 - [ ] Add safe reader flow for permitted sources.
 
@@ -472,19 +612,29 @@ Current relevant structure:
 - [x] Add character builder MVP.
 - [x] Add campaign creator MVP.
 - [x] Add spellbook/bestiary/equipment sections.
+- [x] Add local RPG storage in `thevault.userRpgCharacters:{userId}`, `thevault.userRpgCampaigns:{userId}` and `thevault.userRpgSessions:{userId}`.
+- [x] Sync favorite characters and campaigns into global favorites.
+- [x] Add D&D 5e conditions/rules compendium preview.
+- [x] Add campaign session notes.
 - [ ] Add detail pages for characters and campaigns.
+- [ ] Add dedicated RPG subroutes with full-page views.
 
 ### Phase 7 - Docker, Backend and Database
 
-- [ ] Add Docker Compose for PostgreSQL, Redis and Adminer.
-- [ ] Add Fastify API in `apps/api`.
-- [ ] Add Prisma schema and migrations.
-- [ ] Add auth endpoints.
-- [ ] Add profile/library/favorites endpoints.
+- [x] Add Docker Compose for PostgreSQL, Redis and Adminer.
+- [x] Add Docker infrastructure documentation.
+- [x] Add Docker helper scripts.
+- [x] Add Fastify API in `apps/api`.
+- [x] Add Prisma schema.
+- [x] Add auth endpoints.
+- [x] Add profile/library/favorites endpoints.
+- [x] Add local API clients for future frontend migration.
+- [ ] Commit initial Prisma migration after running PostgreSQL locally.
 
 ### Phase 8 - Real User Persistence
 
-- [ ] Add API client with online/offline backend detection.
+- [x] Add API client with online/offline backend detection.
+- [x] Migrate Auth/Profile/Settings/NSFW/Favorites to backend with local fallback.
 - [ ] Sync local collections to backend.
 - [ ] Keep local fallback when backend is unavailable.
 
@@ -509,7 +659,7 @@ Current relevant structure:
 
 ## Backend Plan
 
-The future backend will use:
+The backend uses:
 
 - Fastify
 - TypeScript
@@ -517,10 +667,10 @@ The future backend will use:
 - PostgreSQL
 - Redis
 - Zod
-- JWT or httpOnly cookie auth
+- JWT auth in the MVP
 - Docker Compose for local infrastructure
 
-Initial services:
+Local infrastructure services:
 
 - `postgres`
 - `redis`
@@ -544,15 +694,19 @@ Initial API routes:
 - `POST /me/rpg/characters`
 - `GET /me/favorites`
 - `POST /me/favorites`
-- `GET /me/nsfw-consent`
-- `POST /me/nsfw-consent`
+- `GET /users/me/nsfw`
+- `POST /users/me/nsfw/enable`
+- `POST /users/me/nsfw/disable`
+
+See [docs/backend.md](docs/backend.md) for payload examples and operational notes.
 
 ---
 
 ## Limitations
 
-- Auth is currently MVP/local-first, not production authentication.
-- Backend, PostgreSQL, Redis and Prisma are not implemented yet.
+- Auth uses backend JWT when available, but it is still MVP authentication, not production-grade auth.
+- Backend, Prisma schema and protected collection endpoints exist, but Games/TCG/Manga/RPG Vault data still uses local storage by default.
+- PostgreSQL, Redis and Adminer exist as local Docker infrastructure and are used by the backend when it is running.
 - Some user collections still rely on local storage.
 - Vault Forge is a planned shell, not an operational AI workspace yet.
 - IGDB must wait for a backend bridge because its client secret must never reach the frontend.

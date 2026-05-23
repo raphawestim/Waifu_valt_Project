@@ -11,6 +11,7 @@ interface VaultChoiceCardProps {
   badge?: string;
   status?: 'Active' | 'Beta' | 'Planned' | 'active' | 'beta' | 'planned';
   locked?: boolean;
+  disabled?: boolean;
   onEnter: () => void;
 }
 
@@ -62,13 +63,15 @@ export const VaultChoiceCard: React.FC<VaultChoiceCardProps> = ({
   badge,
   status,
   locked,
+  disabled,
   onEnter,
 }) => {
   const styles = accentStyles[accent];
+  const isDisabled = Boolean(disabled);
 
   return (
     <article
-      className={`group relative flex min-h-[22rem] flex-col justify-between overflow-hidden rounded-3xl border bg-gradient-to-br p-6 shadow-2xl shadow-black/35 backdrop-blur-xl transition duration-300 ${locked ? 'opacity-70 grayscale-[0.25]' : 'hover:-translate-y-1'} ${styles.shell}`}
+      className={`group relative flex min-h-[22rem] flex-col justify-between overflow-hidden rounded-3xl border bg-gradient-to-br p-6 shadow-2xl shadow-black/35 backdrop-blur-xl transition duration-300 ${locked ? 'opacity-75 grayscale-[0.2]' : 'hover:-translate-y-1'} ${styles.shell}`}
     >
       <div className={`absolute inset-x-8 top-0 h-px ${styles.glow}`} />
       <div className={`absolute -right-12 bottom-8 h-40 w-40 rounded-full blur-3xl ${styles.glow}`} />
@@ -105,11 +108,11 @@ export const VaultChoiceCard: React.FC<VaultChoiceCardProps> = ({
 
       <button
         type="button"
-        onClick={locked ? undefined : onEnter}
-        disabled={locked}
-        className={`relative mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r px-4 py-3 text-center text-xs font-black uppercase leading-5 tracking-[0.12em] text-white shadow-xl transition ${locked ? 'cursor-not-allowed from-gray-700 to-gray-800 text-gray-300 opacity-80' : `group-hover:scale-[1.01] ${styles.button}`}`}
+        onClick={isDisabled ? undefined : onEnter}
+        disabled={isDisabled}
+        className={`relative mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r px-4 py-3 text-center text-xs font-black uppercase leading-5 tracking-[0.12em] text-white shadow-xl transition ${isDisabled ? 'cursor-not-allowed from-gray-700 to-gray-800 text-gray-300 opacity-80' : `group-hover:scale-[1.01] ${styles.button}`}`}
       >
-        {locked ? 'Locked' : buttonLabel}
+        {isDisabled ? 'Locked' : buttonLabel}
       </button>
     </article>
   );

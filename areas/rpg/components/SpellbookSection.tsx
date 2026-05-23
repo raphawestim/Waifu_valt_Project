@@ -13,11 +13,13 @@ export const SpellbookSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getSpells()
+    setIsLoading(true);
+    setError(null);
+    getSpells(level === 'all' ? undefined : level)
       .then((payload) => setSpells(payload.results))
       .catch(() => setError('Spellbook could not be loaded from the D&D 5e API.'))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [level]);
 
   const visibleSpells = useMemo(() => spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 24), [query, spells]);
 
@@ -59,6 +61,7 @@ export const SpellbookSection: React.FC = () => {
             <Info label="Components" value={(selectedSpell.components || []).join(', ') || 'N/A'} />
           </div>
           <p className="mt-4 text-sm leading-7 text-gray-300">{selectedSpell.desc?.join('\n') || 'No description available.'}</p>
+          {selectedSpell.higher_level?.length ? <p className="mt-4 text-sm leading-7 text-amber-100">{selectedSpell.higher_level.join('\n')}</p> : null}
         </DetailsModal>
       )}
     </section>

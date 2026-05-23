@@ -4,11 +4,12 @@ import { BackToPortalButton } from '../../../shared/components/BackToPortalButto
 
 interface ProfileHeaderProps {
   profile: UserProfile;
+  accountMode?: 'backend' | 'local' | null;
   onBackToPortal: () => void;
   onLogout: () => void;
 }
 
-export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onBackToPortal, onLogout }) => (
+export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, accountMode, onBackToPortal, onLogout }) => (
   <header className="flex flex-col gap-6 border-b border-white/10 pb-8 lg:flex-row lg:items-end lg:justify-between">
     <div>
       <BackToPortalButton onClick={onBackToPortal} />
@@ -21,7 +22,16 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onBackToP
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-violet-200">Global Profile</p>
           <h1 className="mt-2 text-5xl font-black tracking-tight text-white">{profile.displayName || profile.username}</h1>
-          <p className="mt-2 text-sm text-gray-400">Logged as {profile.username}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="text-sm text-gray-400">Logged as {profile.username}</p>
+            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+              accountMode === 'local'
+                ? 'border-amber-300/20 bg-amber-500/10 text-amber-100'
+                : 'border-cyan-300/20 bg-cyan-500/10 text-cyan-100'
+            }`}>
+              {accountMode === 'local' ? 'Local Profile' : 'Backend Account'}
+            </span>
+          </div>
         </div>
       </div>
     </div>

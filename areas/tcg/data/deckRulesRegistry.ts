@@ -1,9 +1,10 @@
-import type { UserDeck } from '../../../shared/storage/userCollectionsService';
+import type { DeckFormat, DeckValidationResult, TcgGame, UserDeck } from '../types/tcg.types';
 
 export interface DeckRulePreset {
   id: string;
-  game: 'magic' | 'pokemon_tcg' | 'yugioh' | 'custom';
-  format: string;
+  label: string;
+  game: TcgGame;
+  format: DeckFormat;
   minCards?: number;
   maxCards?: number;
   exactCards?: number;
@@ -13,56 +14,76 @@ export interface DeckRulePreset {
   notes: string[];
 }
 
-export interface DeckValidationResult {
-  valid: boolean;
-  warnings: string[];
-  errors: string[];
-  totalCards: number;
-  limits: Record<string, unknown>;
-}
-
 export const deckRulesRegistry: DeckRulePreset[] = [
   {
     id: 'magic-standard',
+    label: 'Magic Standard',
     game: 'magic',
-    format: 'Standard',
+    format: 'standard',
     minCards: 60,
     maxCopiesPerCard: 4,
     notes: ['Minimum 60 cards.', 'Maximum 4 copies per card, except basic lands.'],
   },
   {
     id: 'magic-commander',
+    label: 'Magic Commander',
     game: 'magic',
-    format: 'Commander',
+    format: 'commander',
     exactCards: 100,
     singleton: true,
     requiresCommander: true,
-    notes: ['Exactly 100 cards.', 'Singleton format except basic lands.', 'Commander validation is MVP/planned.'],
+    notes: ['Exactly 100 cards.', 'Singleton format except basic lands.', 'Commander selection is planned in this MVP.'],
   },
   {
-    id: 'pokemon-tcg',
+    id: 'magic-modern',
+    label: 'Magic Modern',
+    game: 'magic',
+    format: 'modern',
+    minCards: 60,
+    maxCopiesPerCard: 4,
+    notes: ['Minimum 60 cards.', 'Maximum 4 copies per card, except basic lands.'],
+  },
+  {
+    id: 'magic-pioneer',
+    label: 'Magic Pioneer',
+    game: 'magic',
+    format: 'pioneer',
+    minCards: 60,
+    maxCopiesPerCard: 4,
+    notes: ['Minimum 60 cards.', 'Maximum 4 copies per card, except basic lands.'],
+  },
+  {
+    id: 'pokemon-standard',
+    label: 'Pokemon TCG',
     game: 'pokemon_tcg',
-    format: 'Standard',
+    format: 'pokemon_standard',
     exactCards: 60,
     notes: ['MVP validates the 60-card deck size. Full Pokemon TCG rules are planned.'],
   },
   {
-    id: 'yugioh-main',
+    id: 'yugioh-advanced',
+    label: 'Yu-Gi-Oh Advanced',
     game: 'yugioh',
-    format: 'Main Deck',
+    format: 'yugioh_advanced',
     minCards: 40,
     maxCards: 60,
     notes: ['Main deck must contain 40 to 60 cards. Extra deck validation is planned.'],
   },
   {
     id: 'custom',
+    label: 'Custom',
     game: 'custom',
-    format: 'Custom',
+    format: 'custom',
     notes: ['Custom deck rules are user-defined in a future editor.'],
   },
 ];
 
-const isBasicLand = (name: string) => ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'].includes(name.toLowerCase());
+const basicLands = ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'];
+const isBasicLand = (name: string) => basicLands.includes(name.toLowerCase());
+
+export function getDeckRulePreset(game: TcgGame, format: DeckFormat): DeckRulePreset {
+  return deckRulesRegistry.find((rule) => rule.game === game && rule.format === format) || deckRulesRegistry[0];
+}
 
 export function validateDeck(deck: UserDeck, rulePreset: DeckRulePreset): DeckValidationResult {
   const totalCards = deck.cards.reduce((sum, card) => sum + card.quantity, 0);
@@ -70,13 +91,13 @@ export function validateDeck(deck: UserDeck, rulePreset: DeckRulePreset): DeckVa
   const errors: string[] = [];
 
   if (rulePreset.exactCards && totalCards !== rulePreset.exactCards) {
-    errors.push(`${rulePreset.format} requires exactly ${rulePreset.exactCards} cards.`);
+    errors.push(`${rulePreset.label} requires exactly ${rulePreset.exactCards} cards.`);
   }
   if (rulePreset.minCards && totalCards < rulePreset.minCards) {
-    errors.push(`${rulePreset.format} requires at least ${rulePreset.minCards} cards.`);
+    warnings.push(`${rulePreset.label} usually requires at least ${rulePreset.minCards} cards.`);
   }
   if (rulePreset.maxCards && totalCards > rulePreset.maxCards) {
-    errors.push(`${rulePreset.format} allows at most ${rulePreset.maxCards} cards.`);
+    errors.push(`${rulePreset.label} allows at most ${rulePreset.maxCards} cards.`);
   }
   if (rulePreset.singleton) {
     deck.cards.forEach((card) => {
@@ -93,7 +114,7 @@ export function validateDeck(deck: UserDeck, rulePreset: DeckRulePreset): DeckVa
     });
   }
   if (rulePreset.requiresCommander) {
-    warnings.push('Commander selection is planned; choose your commander in notes for now.');
+    warnings.push('Commander selection is planned; mark your commander in deck notes for now.');
   }
   if (deck.cards.length === 0) {
     warnings.push('Add cards from the gallery to start validating this deck.');
@@ -104,12 +125,5 @@ export function validateDeck(deck: UserDeck, rulePreset: DeckRulePreset): DeckVa
     warnings,
     errors,
     totalCards,
-    limits: {
-      minCards: rulePreset.minCards,
-      maxCards: rulePreset.maxCards,
-      exactCards: rulePreset.exactCards,
-      singleton: rulePreset.singleton,
-      maxCopiesPerCard: rulePreset.maxCopiesPerCard,
-    },
   };
 }

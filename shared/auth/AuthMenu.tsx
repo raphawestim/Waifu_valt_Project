@@ -36,6 +36,13 @@ export const AuthMenu: React.FC<AuthMenuProps> = ({ user, onLogin, onRegister, o
       <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-bold text-gray-300">
         Logged as {user.username}
       </span>
+      <span className={`rounded-full border px-3 py-2 text-xs font-black uppercase tracking-[0.12em] ${
+        user.authMode === 'local'
+          ? 'border-amber-300/20 bg-amber-500/10 text-amber-100'
+          : 'border-cyan-300/20 bg-cyan-500/10 text-cyan-100'
+      }`}>
+        {user.authMode === 'local' ? 'Local Profile' : 'Backend Account'}
+      </span>
       <button
         type="button"
         onClick={onProfile}

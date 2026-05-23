@@ -1,17 +1,32 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { User, WaifuImage } from '../../../types';
 import {
-  getUserCampaigns,
-  getUserDecks,
-  getUserGames,
-  getUserMangaLibrary,
-  getUserRpgCharacters,
   getPokemonGroups,
 } from '../../../shared/storage/userCollectionsService';
+import { getUserGames, loadUserGames, saveUserGameHybrid } from '../../games/services/userGamesService';
+import { getUserDecks, loadUserDecks, saveUserDeckHybrid } from '../../tcg/services/userDecksService';
+import {
+  getAllCampaignSessions,
+  getUserCampaigns,
+  getUserRpgCharacters,
+  loadUserRpgData,
+  saveUserCampaignHybrid,
+  saveUserRpgCharacterHybrid,
+} from '../../rpg/services/userRpgService';
+import { getUserMangaLibrary, loadUserMangaLibrary, saveUserMangaItemHybrid } from '../../manga/services/userMangaService';
+import {
+  checkApiHealth,
+} from '../../../shared/services/apiClient';
 import {
   getGlobalFavorites,
+  getPreferredCurrentUserProfile,
+  getPreferredGlobalFavorites,
+  getPreferredUserGlobalSettings,
   getUserGlobalSettings,
   profileFromAuthUser,
+  removePreferredGlobalFavorite,
+  type GlobalFavoriteItem,
+  type UserProfile,
   type UserGlobalSettings,
 } from '../../../services/userProfileService';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -29,6 +44,7 @@ interface UserProfilePageProps {
   onRegister: () => void;
   onLogout: () => void;
   onSettingsChange?: (settings: UserGlobalSettings) => void;
+  accountMode?: 'backend' | 'local' | null;
 }
 
 export const UserProfilePage: React.FC<UserProfilePageProps> = ({
@@ -39,9 +55,62 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   onRegister,
   onLogout,
   onSettingsChange,
+  accountMode,
 }) => {
-  const profile = useMemo(() => (user ? profileFromAuthUser(user) : null), [user]);
+  const fallbackProfile = useMemo(() => (user ? profileFromAuthUser(user) : null), [user]);
+  const [preferredProfile, setPreferredProfile] = useState<UserProfile | null>(null);
+  const [backendOnline, setBackendOnline] = useState(false);
+  const [backendStatusOnline, setBackendStatusOnline] = useState(false);
+  const [backendFavorites, setBackendFavorites] = useState<GlobalFavoriteItem[] | null>(null);
+  const [backendSettings, setBackendSettings] = useState<UserGlobalSettings | null>(null);
+  const [backendGames, setBackendGames] = useState<ReturnType<typeof getUserGames> | null>(null);
+  const [backendDecks, setBackendDecks] = useState<ReturnType<typeof getUserDecks> | null>(null);
+  const [backendManga, setBackendManga] = useState<ReturnType<typeof getUserMangaLibrary> | null>(null);
+  const [backendRpgCharacters, setBackendRpgCharacters] = useState<ReturnType<typeof getUserRpgCharacters> | null>(null);
+  const [backendRpgCampaigns, setBackendRpgCampaigns] = useState<ReturnType<typeof getUserCampaigns> | null>(null);
+  const [backendRpgSessions, setBackendRpgSessions] = useState<ReturnType<typeof getAllCampaignSessions> | null>(null);
   const [settingsVersion, setSettingsVersion] = useState(0);
+  const [favoritesVersion, setFavoritesVersion] = useState(0);
+  const profile = preferredProfile || fallbackProfile;
+
+  useEffect(() => {
+    let cancelled = false;
+    checkApiHealth().then((health) => {
+      if (!cancelled) setBackendStatusOnline(Boolean(health?.ok));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackProfile?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreferredProfile(null);
+    setBackendFavorites(null);
+    setBackendSettings(null);
+    if (!fallbackProfile?.id) {
+      setBackendOnline(false);
+      return;
+    }
+
+    const loadBackendProfileState = async () => {
+      const [profileResult, settingsResult, favoritesResult] = await Promise.all([
+        getPreferredCurrentUserProfile(),
+        getPreferredUserGlobalSettings(fallbackProfile.id),
+        getPreferredGlobalFavorites(fallbackProfile.id),
+      ]);
+      if (cancelled) return;
+      setPreferredProfile(profileResult.profile);
+      setBackendSettings(settingsResult.settings);
+      setBackendFavorites(favoritesResult.favorites);
+      setBackendOnline(profileResult.backendAvailable || settingsResult.backendAvailable || favoritesResult.backendAvailable);
+    };
+
+    void loadBackendProfileState();
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackProfile?.id]);
 
   if (!user || !profile) {
     return (
@@ -70,19 +139,72 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   }
 
   const userId = profile.id;
-  const games = getUserGames(userId);
-  const decks = getUserDecks(userId);
+  const games = backendGames || getUserGames(userId);
+  const decks = backendDecks || getUserDecks(userId);
   const pokemonGroups = getPokemonGroups(userId);
-  const manga = getUserMangaLibrary(userId);
-  const characters = getUserRpgCharacters(userId);
-  const campaigns = getUserCampaigns(userId);
-  const globalFavorites = getGlobalFavorites(userId);
-  const settings = getUserGlobalSettings(userId);
+  const manga = backendManga || getUserMangaLibrary(userId);
+  const characters = backendRpgCharacters || getUserRpgCharacters(userId);
+  const campaigns = backendRpgCampaigns || getUserCampaigns(userId);
+  const sessions = backendRpgSessions || getAllCampaignSessions(userId);
+  const globalFavorites = backendFavorites || getGlobalFavorites(userId);
+  const settings = backendSettings || getUserGlobalSettings(userId);
   const privacy = Boolean(settings.privacyMode);
 
   const handleSettingsChange = (updated: UserGlobalSettings) => {
+    setBackendSettings(updated);
     setSettingsVersion((version) => version + 1);
     onSettingsChange?.(updated);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([loadUserGames(userId), loadUserDecks(userId), loadUserMangaLibrary(userId), loadUserRpgData(userId)]).then(([gamesResult, decksResult, mangaResult, rpgResult]) => {
+      if (cancelled) return;
+      setBackendGames(gamesResult.games);
+      setBackendDecks(decksResult.decks);
+      setBackendManga(mangaResult.items);
+      setBackendRpgCharacters(rpgResult.characters);
+      setBackendRpgCampaigns(rpgResult.campaigns);
+      setBackendRpgSessions(rpgResult.sessions);
+      setBackendOnline((online) =>
+        online ||
+        gamesResult.storage === 'backend' ||
+        decksResult.storage === 'backend' ||
+        mangaResult.storage === 'backend' ||
+        rpgResult.storage === 'backend',
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, favoritesVersion]);
+
+  const handleRemoveFavorite = async (favoriteId: string) => {
+    const favorite = globalFavorites.find((item) => item.id === favoriteId);
+    if (favorite?.vault === 'games' && favorite.externalId) {
+      const game = games.find((item) => item.source === favorite.source && item.externalId === favorite.externalId);
+      if (game) await saveUserGameHybrid(userId, { ...game, isFavorite: false });
+    }
+    if (favorite?.vault === 'tcg' && favorite.type === 'deck' && favorite.externalId) {
+      const deck = decks.find((item) => item.id === favorite.externalId);
+      if (deck) await saveUserDeckHybrid(userId, { ...deck, isFavorite: false });
+    }
+    if (favorite?.vault === 'rpg' && favorite.type === 'character' && favorite.externalId) {
+      const character = characters.find((item) => item.id === favorite.externalId);
+      if (character) await saveUserRpgCharacterHybrid(userId, { ...character, isFavorite: false });
+    }
+    if (favorite?.vault === 'rpg' && favorite.type === 'campaign' && favorite.externalId) {
+      const campaign = campaigns.find((item) => item.id === favorite.externalId);
+      if (campaign) await saveUserCampaignHybrid(userId, { ...campaign, isFavorite: false });
+    }
+    if (favorite?.vault === 'manga' && favorite.externalId) {
+      const item = manga.find((entry) => entry.source === favorite.source && entry.externalId === favorite.externalId);
+      if (item) await saveUserMangaItemHybrid(userId, { ...item, isFavorite: false });
+    }
+    const { favorites: updatedFavorites, backendAvailable } = await removePreferredGlobalFavorite(userId, favoriteId);
+    setBackendFavorites(updatedFavorites);
+    setBackendOnline(backendAvailable || backendOnline);
+    setFavoritesVersion((version) => version + 1);
   };
 
   const summaries = [
@@ -91,8 +213,11 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
       accent: 'border-cyan-300/20 from-cyan-500/12 via-blue-500/5 to-transparent',
       metrics: [
         { label: 'Saved', value: games.length },
+        { label: 'Wishlist', value: games.filter((game) => game.personalStatus === 'wishlist').length },
         { label: 'Playing', value: games.filter((game) => game.personalStatus === 'playing').length },
         { label: 'Finished', value: games.filter((game) => game.personalStatus === 'finished').length },
+        { label: 'Completed', value: games.filter((game) => game.personalStatus === 'completed').length },
+        { label: 'Favorites', value: games.filter((game) => game.isFavorite).length },
         { label: 'Platinum', value: games.filter((game) => game.personalStatus === 'platinum').length },
       ],
     },
@@ -102,7 +227,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
       metrics: [
         { label: 'Decks', value: decks.length },
         { label: 'Favorite Decks', value: decks.filter((deck) => deck.isFavorite).length },
-        { label: 'Cards', value: decks.reduce((total, deck) => total + deck.cards.length, 0) },
+        { label: 'Cards', value: decks.reduce((total, deck) => total + deck.cards.reduce((sum, card) => sum + card.quantity, 0), 0) },
+        { label: 'Card Favs', value: globalFavorites.filter((item) => item.vault === 'tcg' && item.type === 'card').length },
         { label: 'Pokemon Groups', value: pokemonGroups.length },
       ],
     },
@@ -114,6 +240,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
         { label: 'Want Read', value: manga.filter((item) => item.status === 'want_to_read').length },
         { label: 'Completed', value: manga.filter((item) => item.status === 'completed').length },
         { label: 'Favorites', value: manga.filter((item) => item.isFavorite || item.status === 'favorite').length },
+        { label: 'Paused', value: manga.filter((item) => item.status === 'paused').length },
+        { label: 'Dropped', value: manga.filter((item) => item.status === 'dropped').length },
       ],
     },
     {
@@ -121,8 +249,10 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
       accent: 'border-red-300/20 from-red-500/12 via-amber-500/5 to-transparent',
       metrics: [
         { label: 'Characters', value: characters.length },
+        { label: 'Favorite Heroes', value: characters.filter((character) => character.isFavorite).length },
         { label: 'Campaigns', value: campaigns.length },
-        { label: 'Sessions', value: 0 },
+        { label: 'Favorite Worlds', value: campaigns.filter((campaign) => campaign.isFavorite).length },
+        { label: 'Sessions', value: sessions.length },
         { label: 'AI', value: 'Planned' },
       ],
     },
@@ -149,18 +279,25 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   ];
 
   return (
-    <main className="min-h-screen bg-[#05050a] text-white" data-settings-version={settingsVersion}>
+    <main className="min-h-screen bg-[#05050a] text-white" data-settings-version={settingsVersion} data-favorites-version={favoritesVersion}>
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(124,58,237,0.18),transparent_34%),radial-gradient(circle_at_82%_16%,rgba(6,182,212,0.1),transparent_28%),linear-gradient(180deg,#05050a_0%,#0b0713_58%,#05050a_100%)]" />
       <section className="relative z-10 mx-auto max-w-[92rem] px-5 py-8 sm:px-8">
-        <ProfileHeader profile={profile} onBackToPortal={onBackToPortal} onLogout={onLogout} />
+        <ProfileHeader profile={profile} accountMode={accountMode || user.authMode || (backendOnline ? 'backend' : 'local')} onBackToPortal={onBackToPortal} onLogout={onLogout} />
 
         <div className="mt-8 space-y-8">
+          {(accountMode || user.authMode) === 'local' && (
+            <div className="rounded-3xl border border-amber-300/20 bg-amber-500/10 p-5 text-sm font-semibold leading-6 text-amber-50">
+              You are using a local profile. Data is stored only on this device and may not sync with the backend.
+            </div>
+          )}
           <ProfileStats
             items={[
               { label: 'Games Saved', value: games.length },
               { label: 'Decks', value: decks.length },
               { label: 'Manga Library', value: manga.length },
               { label: 'Global Favorites', value: globalFavorites.length },
+              { label: 'Backend Status', value: backendStatusOnline ? 'Online' : 'Offline' },
+              { label: 'Account Mode', value: (accountMode || user.authMode || (backendOnline ? 'backend' : 'local')) === 'local' ? 'Local Profile' : 'Backend Account' },
             ]}
           />
           <ProfileVaultSummary summaries={summaries} />
@@ -170,7 +307,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
             onRegisterRequest={onRegister}
             onSettingsChange={handleSettingsChange}
           />
-          <GlobalFavoritesPanel favorites={globalFavorites} />
+          <GlobalFavoritesPanel favorites={globalFavorites} onRemoveFavorite={handleRemoveFavorite} />
         </div>
       </section>
     </main>

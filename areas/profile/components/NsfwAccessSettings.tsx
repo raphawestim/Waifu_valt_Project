@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
   CURRENT_NSFW_TERMS_VERSION,
-  disableNsfwAccess,
-  enableNsfwAccess,
+  disablePreferredNsfwAccess,
+  enablePreferredNsfwAccess,
+  getPreferredUserGlobalSettings,
   getUserGlobalSettings,
-  updateUserGlobalSettings,
+  updatePreferredUserGlobalSettings,
   type UserGlobalSettings,
 } from '../../../services/userProfileService';
 import { NsfwAccessModal } from '../../../features/nsfwGate/components/NsfwAccessModal';
+import { checkApiHealth } from '../../../shared/services/apiClient';
 
 interface NsfwAccessSettingsProps {
   userId: string;
@@ -24,15 +26,20 @@ export const NsfwAccessSettings: React.FC<NsfwAccessSettingsProps> = ({
 }) => {
   const [settings, setSettings] = useState(() => getUserGlobalSettings(userId));
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [backendOnline, setBackendOnline] = useState(false);
 
-  const refresh = () => {
-    const updated = getUserGlobalSettings(userId);
+  const refresh = async () => {
+    const [{ settings: updated, backendAvailable }, health] = await Promise.all([
+      getPreferredUserGlobalSettings(userId),
+      checkApiHealth(),
+    ]);
+    setBackendOnline(Boolean(backendAvailable || health?.ok));
     setSettings(updated);
     onSettingsChange?.(updated);
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [userId]);
 
   const enabled =
@@ -40,14 +47,23 @@ export const NsfwAccessSettings: React.FC<NsfwAccessSettingsProps> = ({
     settings.nsfwTermsAccepted &&
     settings.nsfwTermsVersion === CURRENT_NSFW_TERMS_VERSION;
 
-  const handleDisable = () => {
-    const updated = disableNsfwAccess(userId);
+  const handleDisable = async () => {
+    const { settings: updated, backendAvailable } = await disablePreferredNsfwAccess(userId);
+    setBackendOnline(backendAvailable);
     setSettings(updated);
     onSettingsChange?.(updated);
   };
 
-  const handleToggleHide = (checked: boolean) => {
-    const updated = updateUserGlobalSettings(userId, { hideNsfwFromPortal: checked });
+  const handleToggleHide = async (checked: boolean) => {
+    const { settings: updated, backendAvailable } = await updatePreferredUserGlobalSettings(userId, { hideNsfwFromPortal: checked });
+    setBackendOnline(backendAvailable);
+    setSettings(updated);
+    onSettingsChange?.(updated);
+  };
+
+  const handleTogglePrivacy = async (checked: boolean) => {
+    const { settings: updated, backendAvailable } = await updatePreferredUserGlobalSettings(userId, { privacyMode: checked });
+    setBackendOnline(backendAvailable);
     setSettings(updated);
     onSettingsChange?.(updated);
   };
@@ -66,6 +82,11 @@ export const NsfwAccessSettings: React.FC<NsfwAccessSettingsProps> = ({
           enabled ? 'border-emerald-300/25 bg-emerald-500/10 text-emerald-100' : 'border-rose-300/25 bg-rose-500/10 text-rose-100'
         }`}>
           {enabled ? 'Enabled' : 'Disabled'}
+        </span>
+        <span className={`w-fit rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${
+          backendOnline ? 'border-cyan-300/25 bg-cyan-500/10 text-cyan-100' : 'border-white/10 bg-white/[0.04] text-gray-400'
+        }`}>
+          Backend: {backendOnline ? 'online' : 'offline'}
         </span>
       </div>
 
@@ -108,6 +129,16 @@ export const NsfwAccessSettings: React.FC<NsfwAccessSettingsProps> = ({
           />
           Hide NSFW shortcuts from Portal
         </label>
+
+        <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-semibold text-gray-300">
+          <input
+            type="checkbox"
+            checked={Boolean(settings.privacyMode)}
+            onChange={(event) => handleTogglePrivacy(event.target.checked)}
+            className="h-4 w-4 accent-rose-500"
+          />
+          Privacy Mode
+        </label>
       </div>
 
       <NsfwAccessModal
@@ -116,8 +147,9 @@ export const NsfwAccessSettings: React.FC<NsfwAccessSettingsProps> = ({
         onClose={() => setIsModalOpen(false)}
         onLoginRequest={onLoginRequest}
         onRegisterRequest={onRegisterRequest}
-        onConfirm={() => {
-          const updated = enableNsfwAccess(userId);
+        onConfirm={async () => {
+          const { settings: updated, backendAvailable } = await enablePreferredNsfwAccess(userId);
+          setBackendOnline(backendAvailable);
           setSettings(updated);
           onSettingsChange?.(updated);
           setIsModalOpen(false);

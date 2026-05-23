@@ -3,36 +3,253 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String     @id @default(uuid())
-  username      String     @unique
-  avatar_url    String?
-  blacklistTags String?    // Comma-separated tags
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  favorites     Favorite[]
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  settings      UserSettings?
+  nsfwConsents  NsfwConsent[]
+  favorites     GlobalFavorite[]
+  games         UserGame[]
+  decks         UserDeck[]
+  mangaItems    UserMangaItem[]
+  rpgCharacters RpgCharacter[]
+  rpgCampaigns  RpgCampaign[]
+  rpgSessions   RpgSession[]
+  searches      SearchHistory[]
 }
 
-model Favorite {
-  id             String   @id @default(uuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  imageId        String   // Unique ID from the source API
-  thumbnailUrl   String
-  fullUrl        String
-  tags           String   // Comma-separated
-  score          Int      @default(0)
-  artist         String?
-  sourceApi      String
-  rating         String
-  width          Int      @default(0)
-  height         Int      @default(0)
-  type           String   // 'image' | 'video' | 'gif'
-  addedAt        DateTime @default(now())
+model UserSettings {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  theme              String    @default("dark")
+  defaultVault       String    @default("portal")
+  nsfwAccessEnabled  Boolean   @default(false)
+  nsfwTermsAccepted  Boolean   @default(false)
+  nsfwTermsVersion   String?
+  nsfwAcceptedAt     DateTime?
+  hideNsfwFromPortal Boolean   @default(false)
+  privacyMode        Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  @@unique([userId, imageId])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NsfwConsent {
+  id           String    @id @default(cuid())
+  userId       String
+  accepted     Boolean   @default(false)
+  termsVersion String
+  acceptedAt   DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model GlobalFavorite {
+  id           String   @id @default(cuid())
+  userId       String
+  vault        String
+  type         String
+  source       String?
+  externalId   String?
+  title        String
+  thumbnailUrl String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([vault, type])
+  @@unique([userId, vault, type, source, externalId])
+}
+
+model UserGame {
+  id               String   @id @default(cuid())
+  userId           String
+  source           String
+  externalId       String
+  title            String
+  coverUrl         String?
+  platforms        String[]
+  selectedPlatform String?
+  releaseDate      String?
+  personalStatus   String
+  isFavorite       Boolean  @default(false)
+  notes            String?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, source, externalId])
+}
+
+model UserDeck {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  game        String
+  format      String
+  tags        String[]
+  isFavorite  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards DeckCard[]
+
+  @@index([userId])
+}
+
+model DeckCard {
+  id         String   @id @default(cuid())
+  deckId     String
+  source     String
+  externalId String
+  name       String
+  imageUrl   String?
+  quantity   Int      @default(1)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  deck UserDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId])
+  @@unique([deckId, source, externalId])
+}
+
+model UserMangaItem {
+  id             String   @id @default(cuid())
+  userId         String
+  source         String
+  externalId     String
+  type           String
+  title          String
+  coverUrl       String?
+  bannerUrl      String?
+  authors        String[]
+  genres         String[]
+  status         String
+  currentChapter Int?
+  totalChapters  Int?
+  currentEpisode Int?
+  totalEpisodes  Int?
+  personalRating Int?
+  notes          String?
+  isFavorite     Boolean  @default(false)
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, source, externalId])
+}
+
+model RpgCharacter {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  raceIndex   String?
+  raceName    String?
+  classIndex  String?
+  className   String?
+  level       Int      @default(1)
+  background  String?
+  alignment   String?
+  attributes  Json
+  notes       String?
+  isFavorite  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RpgCampaign {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  system       String
+  tone         String?
+  world        String?
+  description  String?
+  characterIds String[]
+  notes        String?
+  isFavorite   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions RpgSession[]
+
+  @@index([userId])
+}
+
+model RpgSession {
+  id          String    @id @default(cuid())
+  userId      String
+  campaignId  String
+  title       String
+  summary     String?
+  notes       String?
+  sessionDate DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign RpgCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([campaignId])
+}
+
+model ExternalApiCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  provider  String
+  payload   Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([provider])
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String?
+  vault     String
+  query     String
+  provider  String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([vault])
 }

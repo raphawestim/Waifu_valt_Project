@@ -58,6 +58,7 @@ export interface DndMonster {
   name: string;
   size?: string;
   type?: string;
+  subtype?: string;
   alignment?: string;
   armor_class?: unknown[];
   hit_points?: number;
@@ -73,6 +74,7 @@ export interface DndMonster {
   xp?: number;
   actions?: Array<{ name?: string; desc?: string }>;
   special_abilities?: Array<{ name?: string; desc?: string }>;
+  legendary_actions?: Array<{ name?: string; desc?: string }>;
   url: string;
 }
 
@@ -97,12 +99,21 @@ export interface DndRule {
   url: string;
 }
 
+export interface DndCondition {
+  index: string;
+  name: string;
+  desc?: string[];
+  url: string;
+}
+
 export interface UserRpgCharacter {
   id: string;
   userId: string;
   name: string;
   raceIndex?: string;
+  raceName?: string;
   classIndex?: string;
+  className?: string;
   level: number;
   background?: string;
   alignment?: string;
@@ -115,6 +126,7 @@ export interface UserRpgCharacter {
     charisma: number;
   };
   notes?: string;
+  isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,6 +141,7 @@ export interface UserCampaign {
   description?: string;
   characterIds: string[];
   notes?: string;
+  isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,7 +151,9 @@ export interface CampaignSession {
   userId: string;
   campaignId: string;
   title: string;
-  summary: string;
+  summary?: string;
+  notes?: string;
+  sessionDate?: string;
   createdAt: string;
   updatedAt: string;
 }

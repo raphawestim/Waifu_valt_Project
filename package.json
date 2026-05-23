@@ -6,17 +6,36 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:ps": "docker compose ps",
+    "docker:logs:postgres": "docker compose logs postgres",
+    "docker:logs:redis": "docker compose logs redis",
+    "api:dev": "tsx watch apps/api/src/server.ts",
+    "api:build": "tsc -p apps/api/tsconfig.json",
+    "api:start": "node apps/api/dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/jwt": "^10.1.0",
     "@prisma/client": "^5.22.0",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "fastify": "^5.8.5",
+    "ioredis": "^5.10.1",
     "multer": "^2.1.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "tsx": "^4.22.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

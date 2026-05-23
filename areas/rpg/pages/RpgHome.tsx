@@ -1,20 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BackToPortalButton } from '../../../shared/components/BackToPortalButton';
 import { ErrorState } from '../../../shared/components/ErrorState';
 import {
-  getUserCampaigns,
-  getUserRpgCharacters,
-  type UserCampaign,
-  type UserRpgCharacter,
-} from '../../../shared/storage/userCollectionsService';
+  getAllCampaignSessions,
+  loadUserRpgData,
+} from '../services/userRpgService';
 import { AiDungeonMasterPanel } from '../components/AiDungeonMasterPanel';
 import { BestiarySection } from '../components/BestiarySection';
 import { CampaignCreator } from '../components/CampaignCreator';
 import { CharacterBuilder } from '../components/CharacterBuilder';
 import { EquipmentSection } from '../components/EquipmentSection';
 import { SpellbookSection } from '../components/SpellbookSection';
-import { getClasses, getRaces, getRules } from '../services/dnd5eService';
-import type { DndApiReference } from '../types/rpg.types';
+import { getClasses, getConditions, getRaces, getRules } from '../services/dnd5eService';
+import type { DndApiReference, UserCampaign, UserRpgCharacter } from '../types/rpg.types';
 
 interface RpgHomeProps {
   isLoggedIn: boolean;
@@ -36,24 +34,56 @@ export const RpgHome: React.FC<RpgHomeProps> = ({
   const [classes, setClasses] = useState<DndApiReference[]>([]);
   const [races, setRaces] = useState<DndApiReference[]>([]);
   const [rules, setRules] = useState<DndApiReference[]>([]);
+  const [conditions, setConditions] = useState<DndApiReference[]>([]);
   const [characters, setCharacters] = useState<UserRpgCharacter[]>([]);
   const [campaigns, setCampaigns] = useState<UserCampaign[]>([]);
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
   useEffect(() => {
-    setCharacters(userId ? getUserRpgCharacters(userId) : []);
-    setCampaigns(userId ? getUserCampaigns(userId) : []);
+    if (!userId) {
+      setCharacters([]);
+      setCampaigns([]);
+      setStorageWarning(null);
+      return;
+    }
+
+    let cancelled = false;
+    loadUserRpgData(userId).then((result) => {
+      if (cancelled) return;
+      setCharacters(result.characters);
+      setCampaigns(result.campaigns);
+      setStorageWarning(result.warning || null);
+      setSessionVersion((version) => version + 1);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   useEffect(() => {
-    Promise.all([getClasses(), getRaces(), getRules()])
-      .then(([classList, raceList, ruleList]) => {
+    Promise.all([getClasses(), getRaces(), getRules(), getConditions()])
+      .then(([classList, raceList, ruleList, conditionList]) => {
         setClasses(classList.results);
         setRaces(raceList.results);
         setRules(ruleList.results);
+        setConditions(conditionList.results);
       })
       .catch(() => setApiError('D&D 5e API data could not be loaded. Local character and campaign storage still works.'));
   }, []);
+
+  const sessions = useMemo(() => (userId ? getAllCampaignSessions(userId) : []), [userId, campaigns, sessionVersion]);
+
+  const summaryCards = [
+    ['My Characters', '#characters', `${characters.length} saved`],
+    ['My Campaigns', '#campaigns', `${campaigns.length} worlds`],
+    ['Spellbook', '#spells', 'D&D 5e magic'],
+    ['Bestiary', '#bestiary', 'Monsters'],
+    ['Equipment', '#equipment', 'Gear'],
+    ['Rules', '#rules', `${rules.length + conditions.length} entries`],
+  ];
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#05050a] text-white selection:bg-amber-500/30">
@@ -62,10 +92,10 @@ export const RpgHome: React.FC<RpgHomeProps> = ({
         <header className="flex flex-col gap-5 border-b border-white/10 pb-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <BackToPortalButton onClick={onBackToPortal} tone="violet" />
-            <h1 className="mt-4 text-5xl font-black leading-none tracking-tight text-white sm:text-6xl">Vault D&D / RPG</h1>
+            <h1 className="mt-4 text-5xl font-black leading-none tracking-tight text-white sm:text-6xl">The Vault D&D / RPG</h1>
             <p className="mt-3 text-sm font-black uppercase tracking-[0.22em] text-amber-200/80">Characters · Campaigns · Monsters · Spells · AI Dungeon Master</p>
             <p className="mt-4 max-w-3xl text-base leading-8 text-gray-400">
-              Create characters, manage campaigns, consult the D&D 5e SRD and prepare local AI-powered RPG sessions.
+              Create characters, build campaigns, explore D&D 5e rules, browse monsters and spells, and prepare future AI-assisted RPG sessions.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -73,19 +103,15 @@ export const RpgHome: React.FC<RpgHomeProps> = ({
               {isLoggedIn ? `Logged as ${username}` : 'Guest mode'}
             </span>
             {!isLoggedIn && <button onClick={onLoginClick} className="rounded-full border border-amber-300/25 bg-amber-500/10 px-4 py-2 text-xs font-black text-amber-100">Login</button>}
+            <a href="/rpg/characters" className="rounded-full border border-amber-300/25 bg-amber-500/10 px-4 py-2 text-xs font-black text-amber-100">My Characters</a>
+            <a href="/rpg/campaigns" className="rounded-full border border-red-300/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-100">My Campaigns</a>
             <button onClick={onEnterNsfw} className="rounded-full border border-rose-300/20 bg-rose-500/10 px-4 py-2 text-xs font-black text-rose-100">NSFW 18+</button>
           </div>
         </header>
 
         <div className="space-y-10 py-8">
-          <section className="grid gap-3 md:grid-cols-5">
-            {[
-              ['My Characters', '#characters', `${characters.length} saved`],
-              ['My Campaigns', '#campaigns', `${campaigns.length} worlds`],
-              ['Bestiary', '#bestiary', 'Monsters'],
-              ['Spellbook', '#spells', 'Magic'],
-              ['Rules', '#rules', `${rules.length || 0} sections`],
-            ].map(([label, href, caption]) => (
+          <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {summaryCards.map(([label, href, caption]) => (
               <a key={label} href={href} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:-translate-y-0.5 hover:border-amber-300/25 hover:bg-white/[0.06]">
                 <div className="text-sm font-black text-white">{label}</div>
                 <div className="mt-1 text-xs font-bold text-gray-500">{caption}</div>
@@ -93,17 +119,50 @@ export const RpgHome: React.FC<RpgHomeProps> = ({
             ))}
           </section>
 
+          <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {[
+              ['Favorite Characters', characters.filter((character) => character.isFavorite).length],
+              ['Favorite Campaigns', campaigns.filter((campaign) => campaign.isFavorite).length],
+              ['Saved Sessions', sessions.length],
+              ['Classes', classes.length],
+              ['Races', races.length],
+              ['AI Dungeon Master', 'Planned'],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-amber-300/15 bg-black/25 p-4">
+                <div className="text-2xl font-black text-white">{value}</div>
+                <div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">{label}</div>
+              </div>
+            ))}
+          </section>
+
           {apiError && <ErrorState message={apiError} />}
-          <CharacterBuilder userId={userId} classes={classes} races={races} characters={characters} onCharactersChange={setCharacters} onLoginRequired={onLoginClick} />
-          <CampaignCreator userId={userId} campaigns={campaigns} characters={characters} onCampaignsChange={setCampaigns} onLoginRequired={onLoginClick} />
-          <BestiarySection />
+          {storageWarning && <ErrorState message={storageWarning} />}
+          <CharacterBuilder
+            userId={userId}
+            classes={classes}
+            races={races}
+            characters={characters}
+            onCharactersChange={setCharacters}
+            onLoginRequired={onLoginClick}
+            onStorageWarning={setStorageWarning}
+          />
+          <CampaignCreator
+            userId={userId}
+            campaigns={campaigns}
+            characters={characters}
+            onCampaignsChange={setCampaigns}
+            onLoginRequired={onLoginClick}
+            onSessionsChange={() => setSessionVersion((version) => version + 1)}
+            onStorageWarning={setStorageWarning}
+          />
           <SpellbookSection />
+          <BestiarySection />
           <EquipmentSection />
           <section id="rules" className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-200">Rules Compendium</p>
-            <h2 className="mt-2 text-2xl font-black text-white">D&D 5e SRD rules</h2>
+            <h2 className="mt-2 text-2xl font-black text-white">D&D 5e SRD rules and conditions</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {rules.map((rule) => (
+              {[...rules, ...conditions].map((rule) => (
                 <a key={rule.index} href={`https://www.dnd5eapi.co${rule.url}`} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-black text-white hover:border-amber-300/25">
                   {rule.name}
                 </a>

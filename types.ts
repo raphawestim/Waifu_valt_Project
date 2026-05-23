@@ -35,6 +35,7 @@ export interface User {
   token: string;
   avatar_url?: string;
   blacklistTags?: string;
+  authMode?: 'backend' | 'local';
 }
 
 export interface UserList {

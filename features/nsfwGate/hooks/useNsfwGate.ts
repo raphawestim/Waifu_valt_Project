@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CURRENT_NSFW_TERMS_VERSION,
-  enableNsfwAccess,
+  enablePreferredNsfwAccess,
+  getPreferredUserGlobalSettings,
   getUserGlobalSettings,
-  hasNsfwAccess,
   type UserGlobalSettings,
 } from '../../../services/userProfileService';
 
@@ -21,19 +21,37 @@ const guestSettings = (): UserGlobalSettings => ({
 
 export function useNsfwGate(userId?: string) {
   const [isGateOpen, setIsGateOpen] = useState(false);
+  const [isChecking, setIsChecking] = useState(Boolean(userId));
   const [settings, setSettings] = useState<UserGlobalSettings>(() =>
     userId ? getUserGlobalSettings(userId) : guestSettings(),
   );
 
   const refresh = useCallback(() => {
-    setSettings(userId ? getUserGlobalSettings(userId) : guestSettings());
+    if (!userId) {
+      setSettings(guestSettings());
+      setIsChecking(false);
+      return;
+    }
+    setIsChecking(true);
+    void getPreferredUserGlobalSettings(userId).then(({ settings: updated }) => {
+      setSettings(updated);
+      setIsChecking(false);
+    }).catch(() => {
+      setSettings(getUserGlobalSettings(userId));
+      setIsChecking(false);
+    });
   }, [userId]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  const hasAccess = Boolean(userId && hasNsfwAccess(userId));
+  const hasAccess = Boolean(
+    userId &&
+      settings.nsfwAccessEnabled &&
+      settings.nsfwTermsAccepted &&
+      settings.nsfwTermsVersion === CURRENT_NSFW_TERMS_VERSION,
+  );
 
   const openGate = useCallback(() => setIsGateOpen(true), []);
   const closeGate = useCallback(() => setIsGateOpen(false), []);
@@ -43,8 +61,10 @@ export function useNsfwGate(userId?: string) {
       setIsGateOpen(false);
       return guestSettings();
     }
-    const updated = enableNsfwAccess(userId);
-    setSettings(updated);
+    void enablePreferredNsfwAccess(userId).then(({ settings: updated }) => {
+      setSettings(updated);
+    });
+    const updated = getUserGlobalSettings(userId);
     setIsGateOpen(false);
     return updated;
   }, [userId]);
@@ -52,6 +72,7 @@ export function useNsfwGate(userId?: string) {
   return useMemo(
     () => ({
       isGateOpen,
+      isChecking,
       settings,
       hasAccess,
       hasAcceptedTerms: hasAccess,
@@ -60,6 +81,6 @@ export function useNsfwGate(userId?: string) {
       acceptTerms,
       refresh,
     }),
-    [acceptTerms, closeGate, hasAccess, isGateOpen, openGate, refresh, settings],
+    [acceptTerms, closeGate, hasAccess, isChecking, isGateOpen, openGate, refresh, settings],
   );
 }

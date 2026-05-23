@@ -3,9 +3,10 @@ import type { GlobalFavoriteItem } from '../../../services/userProfileService';
 
 interface GlobalFavoritesPanelProps {
   favorites: GlobalFavoriteItem[];
+  onRemoveFavorite?: (favoriteId: string) => void;
 }
 
-export const GlobalFavoritesPanel: React.FC<GlobalFavoritesPanelProps> = ({ favorites }) => (
+export const GlobalFavoritesPanel: React.FC<GlobalFavoritesPanelProps> = ({ favorites, onRemoveFavorite }) => (
   <section>
     <div className="mb-5">
       <p className="text-[10px] font-black uppercase tracking-[0.26em] text-fuchsia-200">Global Favorites</p>
@@ -29,6 +30,15 @@ export const GlobalFavoritesPanel: React.FC<GlobalFavoritesPanelProps> = ({ favo
                 {favorite.vault} / {favorite.type}
               </p>
               <h3 className="mt-2 line-clamp-2 text-base font-black text-white">{favorite.title}</h3>
+              {onRemoveFavorite && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveFavorite(favorite.id)}
+                  className="mt-4 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  Remove
+                </button>
+              )}
             </div>
           </article>
         ))}

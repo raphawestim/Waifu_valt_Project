@@ -1,34 +1,36 @@
 
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
-import { Sidebar } from './components/Sidebar';
-import { ImageGrid } from './components/ImageGrid';
-import { AuthModal } from './components/AuthModal';
 import { FullScreenSpinner } from './components/Spinner';
 import { EmptyState } from './components/EmptyState';
 import { Pagination } from './components/Pagination';
-import { NsfwModal } from './components/NsfwModal';
 import { searchImages, getRandomImages } from './services/imageService';
-import { useAuth, AuthProvider } from './context/AuthContext';
+import { useAuth, AuthProvider, type AuthCredentials, type AuthOptions } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import type { GallerySortOption, SourceApi, WaifuImage, SearchOptions, NHentaiGallery } from './types';
 import { API_FAVICONS, DEFAULT_SEARCH_OPTIONS } from './constants';
 import { AIProvider, useAI } from './components/AI/AIContext';
-import { VaultChatDrawer } from './components/VaultChat/VaultChatDrawer';
-import { LocalAIStatus } from './components/AI/LocalAIStatus';
-import { TheVaultPortal } from './areas/portal/pages/TheVaultPortal';
-import { GamesHome } from './areas/games/pages/GamesHome';
-import { TcgHome } from './areas/tcg/pages/TcgHome';
-import { MangaAnimeHome } from './areas/manga/pages/MangaAnimeHome';
-import { RpgHome } from './areas/rpg/pages/RpgHome';
-import { ForgeHome } from './areas/forge/pages/ForgeHome';
-import { LoginPage } from './areas/auth/pages/LoginPage';
-import { RegisterPage } from './areas/auth/pages/RegisterPage';
-import { UserProfilePage } from './areas/profile/pages/UserProfilePage';
-import { NsfwAccessModal } from './features/nsfwGate/components/NsfwAccessModal';
 import { useNsfwGate } from './features/nsfwGate/hooks/useNsfwGate';
 import { TheValtAreaSwitchButton } from './components/shell/TheValtAreaSwitchButton';
 import type { VaultId } from './data/vaultRegistry';
 import type { AppArea } from './types/app.types';
+import { RouteLoadingState } from './shared/components/RouteLoadingState';
+
+const Sidebar = React.lazy(() => import('./components/Sidebar').then(module => ({ default: module.Sidebar })));
+const ImageGrid = React.lazy(() => import('./components/ImageGrid').then(module => ({ default: module.ImageGrid })));
+const AuthModal = React.lazy(() => import('./components/AuthModal').then(module => ({ default: module.AuthModal })));
+const NsfwModal = React.lazy(() => import('./components/NsfwModal').then(module => ({ default: module.NsfwModal })));
+const VaultChatDrawer = React.lazy(() => import('./components/VaultChat/VaultChatDrawer').then(module => ({ default: module.VaultChatDrawer })));
+const LocalAIStatus = React.lazy(() => import('./components/AI/LocalAIStatus').then(module => ({ default: module.LocalAIStatus })));
+const TheVaultPortal = React.lazy(() => import('./areas/portal/pages/TheVaultPortal').then(module => ({ default: module.TheVaultPortal })));
+const GamesHome = React.lazy(() => import('./areas/games/pages/GamesHome').then(module => ({ default: module.GamesHome })));
+const TcgHome = React.lazy(() => import('./areas/tcg/pages/TcgHome').then(module => ({ default: module.TcgHome })));
+const MangaAnimeHome = React.lazy(() => import('./areas/manga/pages/MangaAnimeHome').then(module => ({ default: module.MangaAnimeHome })));
+const RpgHome = React.lazy(() => import('./areas/rpg/pages/RpgHome').then(module => ({ default: module.RpgHome })));
+const ForgeHome = React.lazy(() => import('./areas/forge/pages/ForgeHome').then(module => ({ default: module.ForgeHome })));
+const LoginPage = React.lazy(() => import('./areas/auth/pages/LoginPage').then(module => ({ default: module.LoginPage })));
+const RegisterPage = React.lazy(() => import('./areas/auth/pages/RegisterPage').then(module => ({ default: module.RegisterPage })));
+const UserProfilePage = React.lazy(() => import('./areas/profile/pages/UserProfilePage').then(module => ({ default: module.UserProfilePage })));
+const NsfwAccessModal = React.lazy(() => import('./features/nsfwGate/components/NsfwAccessModal').then(module => ({ default: module.NsfwAccessModal })));
 
 const HomeView = React.lazy(() => import('./components/HomeView').then(module => ({ default: module.HomeView })));
 const ImageModal = React.lazy(() => import('./components/ImageModal').then(module => ({ default: module.ImageModal })));
@@ -228,7 +230,7 @@ const GalleryControls: React.FC<GalleryControlsProps> = ({
 };
 
 const AppContent: React.FC = () => {
-    const { user, favorites, lists, login, logout } = useAuth();
+    const { user, authMode, favorites, lists, login, register, logout } = useAuth();
     const { promptLabImage, setPromptLabImage } = useAI();
     const [activeArea, setActiveArea] = useState<AppArea>(() => getAreaFromPath(window.location.pathname));
     const [view, setView] = useState<ViewType>('home');
@@ -291,11 +293,24 @@ const AppContent: React.FC = () => {
     const navigateToLogin = useCallback(() => setAreaRoute('login'), [setAreaRoute]);
     const navigateToRegister = useCallback(() => setAreaRoute('register'), [setAreaRoute]);
     const navigateToProfile = useCallback(() => setAreaRoute('profile'), [setAreaRoute]);
+    const navigateToProfileNsfw = useCallback(() => {
+        if (window.location.pathname !== '/profile/nsfw') {
+            window.history.pushState({}, '', '/profile/nsfw');
+        }
+        setActiveArea('profile');
+        setView('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
 
-    const handleAuthSubmit = useCallback(async (username: string) => {
-        await login(username);
+    const handleAuthSubmit = useCallback(async (credentials: AuthCredentials, options?: AuthOptions) => {
+        await login(credentials, options);
         setAreaRoute('profile');
     }, [login, setAreaRoute]);
+
+    const handleRegisterSubmit = useCallback(async (credentials: AuthCredentials, options?: AuthOptions) => {
+        await register(credentials, options);
+        setAreaRoute('profile');
+    }, [register, setAreaRoute]);
 
     const handleLogout = useCallback(() => {
         logout();
@@ -310,6 +325,7 @@ const AppContent: React.FC = () => {
     useEffect(() => {
         const handlePopState = () => {
             const nextArea = getAreaFromPath(window.location.pathname);
+            if (nextArea === 'nsfw' && nsfwGate.isChecking) return;
             if (nextArea === 'nsfw' && (!user || !nsfwGate.hasAccess)) {
                 setAreaRoute('portal', 'replace');
                 nsfwGate.openGate();
@@ -325,6 +341,7 @@ const AppContent: React.FC = () => {
 
     useEffect(() => {
         if (activeArea !== 'nsfw') return;
+        if (nsfwGate.isChecking) return;
         if (user && nsfwGate.hasAccess) return;
 
         setAreaRoute('portal', 'replace');
@@ -629,17 +646,19 @@ const AppContent: React.FC = () => {
     };
 
     const showNsfwPortalCard = !(user && nsfwGate.settings.hideNsfwFromPortal);
-    const nsfwAccessModal = (
+    const nsfwAccessModal = nsfwGate.isGateOpen ? (
         <NsfwAccessModal
             isOpen={nsfwGate.isGateOpen}
             isLoggedIn={!!user}
             onClose={nsfwGate.closeGate}
             onLoginRequest={navigateToLogin}
             onRegisterRequest={navigateToRegister}
-            onProfileSettings={navigateToProfile}
+            onProfileSettings={navigateToProfileNsfw}
             onConfirm={handleConfirmNsfwAreaAccess}
         />
-    );
+    ) : null;
+    const authModal = isAuthModalOpen ? <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} /> : null;
+    const nsfwModal = isNsfwModalOpen ? <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} /> : null;
 
     if (activeArea === 'login') {
         return (
@@ -658,7 +677,7 @@ const AppContent: React.FC = () => {
             <div className="min-h-screen bg-[#05050a] text-white">
                 <RegisterPage
                     onBackToPortal={() => setAreaRoute('portal')}
-                    onSubmit={handleAuthSubmit}
+                    onSubmit={handleRegisterSubmit}
                     onLogin={navigateToLogin}
                 />
             </div>
@@ -676,6 +695,7 @@ const AppContent: React.FC = () => {
                     onRegister={navigateToRegister}
                     onLogout={handleLogout}
                     onSettingsChange={nsfwGate.refresh}
+                    accountMode={authMode}
                 />
             </div>
         );
@@ -687,6 +707,7 @@ const AppContent: React.FC = () => {
                 <TheVaultPortal
                     user={user}
                     showNsfwCard={showNsfwPortalCard}
+                    hasNsfwAccess={nsfwGate.hasAccess}
                     onEnterVault={handleEnterVault}
                     onLogin={navigateToLogin}
                     onRegister={navigateToRegister}
@@ -694,7 +715,7 @@ const AppContent: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 {nsfwAccessModal}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
     }
@@ -713,7 +734,7 @@ const AppContent: React.FC = () => {
                     onLoginClick={navigateToLogin}
                 />
                 {nsfwAccessModal}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
     }
@@ -730,7 +751,7 @@ const AppContent: React.FC = () => {
                     onLoginClick={navigateToLogin}
                 />
                 {nsfwAccessModal}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
     }
@@ -748,7 +769,7 @@ const AppContent: React.FC = () => {
                     onLoginClick={navigateToLogin}
                 />
                 {nsfwAccessModal}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
     }
@@ -765,7 +786,7 @@ const AppContent: React.FC = () => {
                     onLoginClick={navigateToLogin}
                 />
                 {nsfwAccessModal}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
     }
@@ -779,9 +800,13 @@ const AppContent: React.FC = () => {
                     onBackToPortal={() => setAreaRoute('portal')}
                     onLoginClick={navigateToLogin}
                 />
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
+    }
+
+    if (activeArea === 'nsfw' && nsfwGate.isChecking) {
+        return <FullScreenSpinner label="Checking Vault access..." />;
     }
 
     if (activeArea === 'nsfw' && (!user || !nsfwGate.hasAccess)) {
@@ -790,6 +815,7 @@ const AppContent: React.FC = () => {
                 <TheVaultPortal
                     user={user}
                     showNsfwCard={showNsfwPortalCard}
+                    hasNsfwAccess={nsfwGate.hasAccess}
                     onEnterVault={handleEnterVault}
                     onLogin={navigateToLogin}
                     onRegister={navigateToRegister}
@@ -797,7 +823,7 @@ const AppContent: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 {nsfwAccessModal}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+                {authModal}
             </div>
         );
     }
@@ -825,8 +851,8 @@ const AppContent: React.FC = () => {
                         onClose={() => setSelectedR34Video(null)} 
                     />
                 )}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-                <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} />
+                {authModal}
+                {nsfwModal}
                 <VaultChatDrawer
                     onOpenPromptLab={(prompt) => {
                         if (prompt) {
@@ -884,8 +910,8 @@ const AppContent: React.FC = () => {
                         canPrev={selectedImage.index > 0}
                     />
                 )}
-                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-                <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} />
+                {authModal}
+                {nsfwModal}
                 <VaultChatDrawer
                     onOpenPromptLab={() => setView('prompt-lab')}
                     onOpenComfyUI={() => setView('comfyui')}
@@ -1021,8 +1047,8 @@ const AppContent: React.FC = () => {
                 />
             )}
             
-            <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-            <NsfwModal isOpen={isNsfwModalOpen} onConfirm={handleConfirmNsfw} onCancel={handleCancelNsfw} />
+            {authModal}
+            {nsfwModal}
             <VaultChatDrawer
                 onOpenPromptLab={() => setView('prompt-lab')}
                 onOpenComfyUI={() => setView('comfyui')}
@@ -1041,7 +1067,7 @@ const App: React.FC = () => (
     <ThemeProvider>
         <AuthProvider>
             <AIProvider>
-                <Suspense fallback={<FullScreenSpinner label="Loading Vault..." />}>
+                <Suspense fallback={<RouteLoadingState />}>
                     <AppContent />
                 </Suspense>
             </AIProvider>

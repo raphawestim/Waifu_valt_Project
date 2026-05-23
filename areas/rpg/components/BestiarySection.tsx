@@ -21,6 +21,11 @@ export const BestiarySection: React.FC = () => {
 
   const visibleMonsters = useMemo(() => monsters.filter((monster) => monster.name.toLowerCase().includes(query.toLowerCase())).slice(0, 24), [monsters, query]);
   const openMonster = (index: string) => getMonsterByIndex(index).then(setSelectedMonster).catch(() => setError('Monster details could not be loaded.'));
+  const armorClass = (monster: DndMonster) => {
+    const first = monster.armor_class?.[0];
+    if (typeof first === 'object' && first && 'value' in first) return String((first as { value?: number }).value ?? 'N/A');
+    return 'N/A';
+  };
 
   return (
     <section id="bestiary">
@@ -43,6 +48,7 @@ export const BestiarySection: React.FC = () => {
         <DetailsModal title={selectedMonster.name} onClose={() => setSelectedMonster(null)}>
           <div className="grid gap-3 sm:grid-cols-3">
             <Info label="Type" value={[selectedMonster.size, selectedMonster.type].filter(Boolean).join(' ') || 'N/A'} />
+            <Info label="AC" value={armorClass(selectedMonster)} />
             <Info label="HP" value={String(selectedMonster.hit_points || 'N/A')} />
             <Info label="CR" value={String(selectedMonster.challenge_rating ?? 'N/A')} />
             <Info label="STR" value={String(selectedMonster.strength || 'N/A')} />
@@ -51,6 +57,8 @@ export const BestiarySection: React.FC = () => {
           </div>
           <div className="mt-4 space-y-3">
             {(selectedMonster.special_abilities || []).slice(0, 4).map((ability) => <p key={ability.name} className="text-sm leading-6 text-gray-300"><strong>{ability.name}.</strong> {ability.desc}</p>)}
+            {(selectedMonster.actions || []).slice(0, 4).map((action) => <p key={action.name} className="text-sm leading-6 text-gray-300"><strong>{action.name}.</strong> {action.desc}</p>)}
+            {(selectedMonster.legendary_actions || []).slice(0, 3).map((action) => <p key={action.name} className="text-sm leading-6 text-amber-100"><strong>{action.name}.</strong> {action.desc}</p>)}
           </div>
         </DetailsModal>
       )}

@@ -1,12 +1,12 @@
 import React from 'react';
-import type { GameLibraryStatus } from '../../../shared/storage/userCollectionsService';
+import type { GamePersonalStatus } from '../types/games.types';
 
 interface GameStatusSelectorProps {
-  value: GameLibraryStatus;
-  onChange: (value: GameLibraryStatus) => void;
+  value: GamePersonalStatus;
+  onChange: (value: GamePersonalStatus) => void;
 }
 
-export const gameStatusLabels: Record<GameLibraryStatus, string> = {
+export const gameStatusLabels: Record<GamePersonalStatus, string> = {
   never_played: 'Never Played',
   plan_to_play: 'Plan to Play',
   wishlist: 'Wishlist',
@@ -22,7 +22,7 @@ export const GameStatusSelector: React.FC<GameStatusSelectorProps> = ({ value, o
     onChange={(event) => onChange(event.target.value as GameLibraryStatus)}
     className="h-10 rounded-xl border border-white/10 bg-[#080812] px-3 text-xs font-bold text-white outline-none focus:border-cyan-300/50"
   >
-    {(Object.keys(gameStatusLabels) as GameLibraryStatus[]).map((status) => (
+    {(Object.keys(gameStatusLabels) as GamePersonalStatus[]).map((status) => (
       <option key={status} value={status}>
         {gameStatusLabels[status]}
       </option>

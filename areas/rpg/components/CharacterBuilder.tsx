@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { createUserRpgCharacter, saveUserRpgCharacter } from '../../../shared/storage/userCollectionsService';
+import {
+  createUserRpgCharacter,
+  deleteUserRpgCharacterHybrid,
+  getUserRpgCharacters,
+  saveUserRpgCharacterHybrid,
+  toggleRpgCharacterFavoriteHybrid,
+} from '../services/userRpgService';
 import type { DndApiReference, UserRpgCharacter } from '../types/rpg.types';
 import { AbilityScoreEditor } from './AbilityScoreEditor';
 import { CharacterSheetPreview } from './CharacterSheetPreview';
@@ -13,18 +19,45 @@ interface CharacterBuilderProps {
   characters: UserRpgCharacter[];
   onCharactersChange: (characters: UserRpgCharacter[]) => void;
   onLoginRequired: () => void;
+  onStorageWarning?: (message: string | null) => void;
 }
 
-export const CharacterBuilder: React.FC<CharacterBuilderProps> = ({ userId, classes, races, characters, onCharactersChange, onLoginRequired }) => {
-  const [draft, setDraft] = useState<UserRpgCharacter>(() => createUserRpgCharacter(userId || 'guest', ''));
+export const CharacterBuilder: React.FC<CharacterBuilderProps> = ({ userId, classes, races, characters, onCharactersChange, onLoginRequired, onStorageWarning }) => {
+  const [draft, setDraft] = useState<UserRpgCharacter>(() => createUserRpgCharacter(userId || 'guest'));
 
-  const saveCharacter = () => {
+  const saveCharacter = async () => {
     if (!userId) {
       onLoginRequired();
       return;
     }
-    onCharactersChange(saveUserRpgCharacter(userId, { ...draft, userId, name: draft.name.trim() || 'Unnamed Hero' }));
-    setDraft(createUserRpgCharacter(userId, ''));
+    const result = await saveUserRpgCharacterHybrid(userId, { ...draft, userId, name: draft.name.trim() || 'Unnamed Hero' });
+    onStorageWarning?.(result.warning || null);
+    onCharactersChange(getUserRpgCharacters(userId));
+    setDraft(createUserRpgCharacter(userId));
+  };
+
+  const chooseRace = (raceIndex: string) => {
+    const race = races.find((item) => item.index === raceIndex);
+    setDraft({ ...draft, raceIndex, raceName: race?.name });
+  };
+
+  const chooseClass = (classIndex: string) => {
+    const classItem = classes.find((item) => item.index === classIndex);
+    setDraft({ ...draft, classIndex, className: classItem?.name });
+  };
+
+  const toggleFavorite = async (characterId: string) => {
+    if (!userId) return;
+    const result = await toggleRpgCharacterFavoriteHybrid(userId, characterId);
+    onStorageWarning?.(result.warning || null);
+    onCharactersChange(getUserRpgCharacters(userId));
+  };
+
+  const removeCharacter = async (characterId: string) => {
+    if (!userId) return;
+    const result = await deleteUserRpgCharacterHybrid(userId, characterId);
+    onStorageWarning?.(result.warning || null);
+    onCharactersChange(getUserRpgCharacters(userId));
   };
 
   return (
@@ -35,8 +68,8 @@ export const CharacterBuilder: React.FC<CharacterBuilderProps> = ({ userId, clas
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Character name" className="h-12 rounded-2xl border border-white/10 bg-[#080812] px-4 text-sm font-bold text-white outline-none" />
           <input type="number" min={1} max={20} value={draft.level} onChange={(event) => setDraft({ ...draft, level: Number(event.target.value) })} className="h-12 rounded-2xl border border-white/10 bg-[#080812] px-4 text-sm font-bold text-white outline-none" />
-          <RaceSelector races={races} value={draft.raceIndex} onChange={(raceIndex) => setDraft({ ...draft, raceIndex })} />
-          <ClassSelector classes={classes} value={draft.classIndex} onChange={(classIndex) => setDraft({ ...draft, classIndex })} />
+          <RaceSelector races={races} value={draft.raceIndex} onChange={chooseRace} />
+          <ClassSelector classes={classes} value={draft.classIndex} onChange={chooseClass} />
           <input value={draft.background || ''} onChange={(event) => setDraft({ ...draft, background: event.target.value })} placeholder="Background" className="h-12 rounded-2xl border border-white/10 bg-[#080812] px-4 text-sm font-bold text-white outline-none" />
           <input value={draft.alignment || ''} onChange={(event) => setDraft({ ...draft, alignment: event.target.value })} placeholder="Alignment" className="h-12 rounded-2xl border border-white/10 bg-[#080812] px-4 text-sm font-bold text-white outline-none" />
         </div>
@@ -53,8 +86,23 @@ export const CharacterBuilder: React.FC<CharacterBuilderProps> = ({ userId, clas
           <div className="mt-3 space-y-2">
             {characters.length === 0 ? <p className="text-sm text-gray-500">No saved characters yet.</p> : characters.map((character) => (
               <div key={character.id} className="rounded-2xl border border-white/10 bg-black/25 p-3">
-                <div className="font-black text-white">{character.name}</div>
-                <div className="text-xs text-gray-500">Level {character.level} · {character.raceIndex || 'race'} · {character.classIndex || 'class'}</div>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-black text-white">{character.name}</div>
+                    <div className="text-xs text-gray-500">Level {character.level} · {character.raceName || character.raceIndex || 'race'} · {character.className || character.classIndex || 'class'}</div>
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-black ${character.isFavorite ? 'bg-amber-500/20 text-amber-100' : 'bg-white/5 text-gray-500'}`}>
+                    {character.isFavorite ? 'Fav' : 'Saved'}
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button onClick={() => toggleFavorite(character.id)} className="rounded-xl border border-amber-300/20 bg-amber-500/10 px-3 py-2 text-xs font-black text-amber-100">
+                    {character.isFavorite ? 'Unfavorite' : 'Favorite'}
+                  </button>
+                  <button onClick={() => removeCharacter(character.id)} className="rounded-xl border border-rose-300/15 bg-rose-500/10 px-3 py-2 text-xs font-black text-rose-100">
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>

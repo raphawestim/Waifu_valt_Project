@@ -7,6 +7,7 @@ import { VaultChoiceCard } from '../components/VaultChoiceCard';
 interface TheVaultPortalProps {
   user: User | null;
   showNsfwCard?: boolean;
+  hasNsfwAccess?: boolean;
   onEnterVault: (vaultId: VaultId) => void;
   onLogin: () => void;
   onRegister: () => void;
@@ -17,6 +18,7 @@ interface TheVaultPortalProps {
 export const TheVaultPortal: React.FC<TheVaultPortalProps> = ({
   user,
   showNsfwCard = true,
+  hasNsfwAccess = false,
   onEnterVault,
   onLogin,
   onRegister,
@@ -55,13 +57,16 @@ export const TheVaultPortal: React.FC<TheVaultPortalProps> = ({
               description={
                 vault.id === 'nsfw' && !user
                   ? 'Login is required before this private vault can be enabled.'
+                  : vault.id === 'nsfw' && !hasNsfwAccess
+                    ? 'Enable Vault NSFW access in your profile before entering this protected adult area.'
                   : vault.description
               }
-              buttonLabel={vault.buttonLabel}
+              buttonLabel={vault.id === 'nsfw' && user && !hasNsfwAccess ? 'Enable NSFW Access' : vault.buttonLabel}
               accent={vault.accent}
               badge={vault.badge}
               status={vault.status}
-              locked={vault.id === 'nsfw' && !user}
+              locked={vault.id === 'nsfw' && !hasNsfwAccess}
+              disabled={vault.id === 'nsfw' && !user}
               onEnter={() => onEnterVault(vault.id)}
             />
           ))}
